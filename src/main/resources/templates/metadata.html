@@ -1,0 +1,323 @@
+<html>
+
+<head>
+	<script th:src="@{/js/jquery.min.js}"></script>
+	<script th:src="@{/js/jquery-1.12.4.js}"></script>
+	<script th:src="@{/js/jquery-ui.js}"></script>
+	<script th:src="@{/js/commonjs.js}"></script>
+	<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+	<link rel="stylesheet" th:href="@{/css/style.css}">
+	<style>
+		table {
+			border-collapse: collapse;
+		}
+
+		th,
+		td {
+			border: none;
+			padding: 10px;
+			text-align: left;
+			min-width: 70px;
+			max-width: 150px;
+			overflow: auto;
+			white-space: nowrap;
+		}
+
+		a {
+			color: black;
+		}
+	</style>
+</head>
+
+<body>
+
+	<div th:replace="header"></div>
+
+	<div class="main">
+		<div class="explorer" style="width: 250px; height:100%; float: left; background-color:rgb(246, 246, 246); overflow-x: scroll;">
+			<div class="global_fields_label" style="width:100%; cursor: pointer; background-color:rgb(220, 220, 220)">Global Category Fields</div>
+			<div class="global_fields"></div>
+			<br>
+			<br>
+			<div class="entities_label" style="width:100%; cursor: pointer; background-color:rgb(220, 220, 220)">Entities</div>
+			<div class="entities"></div>
+			<br>
+			<br>
+			<div class="type_definitions_label" style="width:100%; cursor: pointer; background-color:rgb(220, 220, 220)">Type Definitions</div>
+			<div class="type_definitions"></div>
+		</div>
+		<div class="reference" style="height:100%; overflow-y: scroll;">
+			<div class="content" style="margin-left: 10px; overflow-x: scroll;">
+				<div class="EntityTable" style="margin-top: -10px; display: none;"></div>
+				<div class="AddEntityButtons" style="margin-top: 10px">
+					<input id="AddEntityButton" type="button" value="Add Entity" style="display: none; margin-left: 0px;">
+					<input id="SaveEntityButton" type="button" value="Save" style="display: none; margin-left: 10px;">
+				</div>
+				<div class="TypeTable" style="margin-top: -10px; display: none;"></div>
+				<div class="AddTypeButtons" style="margin-top: 10px">
+					<input id="AddTypeButton" type="button" value="Add Type" style="display: none; margin-left: 0px;">
+					<input id="SaveTypeButton" type="button" value="Save" style="display: none; margin-left: 10px;">
+				</div>
+			</div>
+			<div class="AddFieldButtons" style="margin: 10px 10px;">
+				<input id="AddFieldButton" type="button" value="Add Field" style="display: none; margin: 0;">
+				<input id="SaveFieldButton" type="button" value="Save" style="display: none; margin: 10px 10px;">
+			</div>
+		</div>
+	</div>
+
+	<div style="display: none;">
+		<ul class="UlRef" style="padding-left: 18px">
+			<li></li>
+		</ul>
+	</div>
+
+	<div class="GlobalFieldTableRef" style="margin-top: -10px; display: none;">
+		<table>
+			<thead>
+				<tr>
+					<th class="serial" style="display: none;">Serial</th>
+					<th class="fieldname">Field Name</th>
+					<th class="displayname">Display Name</th>
+					<th class="description">Description</th>
+					<th class="type">Type</th>
+					<th class="values">Enum Values</th>
+					<th class="updatedate" style="display: none;">Update Date</th>
+					<th class="createdate" style="display: none;">Create Date</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td class="serial" style="display: none;"></td>
+					<td class="fieldname"></td>
+					<td class="displayname"></td>
+					<td class="description"></td>
+					<td class="type"></td>
+					<td class="values"></td>
+					<td class="updatedate" style="display: none;"></td>
+					<td class="createdate" style="display: none;"></td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<div class="FieldTableRef" style="margin-top: -10px; display: none;">
+		<table>
+			<thead>
+				<tr>
+					<th class="serial" style="display: none;">Serial</th>
+					<th class="fieldname">Field Name</th>
+					<th class="displayname">Display Name</th>
+					<th class="description">Description</th>
+					<th class="type">Type</th>
+					<th class="subtype" style="display: none;">Sub Type</th>
+					<th class="association_type" style="display: none;">Association Type</th>
+					<th class="values" style="display: none;">Enum Values</th>
+					<th class="fieldlevel">Field Level</th>
+					<th class="required">Required</th>
+					<th class="updatedate" style="display: none;">Update Date</th>
+					<th class="createdate" style="display: none;">Create Date</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td class="serial" style="display: none;"></td>
+					<td class="fieldname"></td>
+					<td class="displayname"></td>
+					<td class="description"></td>
+					<td class="type"></td>
+					<td class="subtype" style="display: none;"></td>
+					<td class="association_type" style="display: none;"></td>
+					<td class="values" style="display: none;"></td>
+					<td class="fieldlevel"></td>
+					<td class="required"></td>
+					<td class="updatedate" style="display: none;"></td>
+					<td class="createdate" style="display: none;"></td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<div class="AddEntity" style="display: none;">
+		<table>
+			<thead>
+				<tr>
+					<th style="display: none;">Serial</th>
+					<th>Entity Name</th>
+					<th>Display Name</th>
+					<th>Description</th>
+					<th class="updatedate" style="display: none;">Update Date</th>
+					<th class="createdate" style="display: none;">Create Date</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr class="entityRow" style="display: none;">
+					<td class="serial" style="display: none;"></td>
+					<td class="entityname"></td>
+					<td class="displayname"></td>
+					<td class="description"></td>
+					<td class="updatedate" style="display: none;"></td>
+					<td class="createdate" style="display: none;"></td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<div class="AddType" style="display: none;">
+		<table>
+			<thead>
+				<tr>
+					<th style="display: none;">Serial</th>
+					<th>Type Name</th>
+					<th>Display Name</th>
+					<th>Description</th>
+					<th class="updatedate" style="display: none;">Update Date</th>
+					<th class="createdate" style="display: none;">Create Date</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr class="typeRow" style="display: none;">
+					<td class="serial" style="display: none;"></td>
+					<td class="typename"></td>
+					<td class="displayname"></td>
+					<td class="description"></td>
+					<td class="updatedate" style="display: none;"></td>
+					<td class="createdate" style="display: none;"></td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<div class="input" style="display: none;">
+		<span></span>
+		<input type="text" style="margin:0;" />
+		<select class="type">
+			<option value="string">String</option>
+			<option value="float">Float</option>
+			<option value="double">Double</option>
+			<option value="integer">Integer</option>
+			<option value="long">Long</option>
+			<option value="date">Date</option>
+			<option value="boolean">Boolean</option>
+			<option value="enum">Enum</option>
+			<option value="array">Array</option>
+			<option value="object">Object</option>
+			<option value="file">File</option>
+		</select>
+		<select class="subtype">
+			<option value=""></option>
+			<option value="string">String</option>
+			<option value="float">Float</option>
+			<option value="double">Double</option>
+			<option value="integer">Integer</option>
+			<option value="long">Long</option>
+			<option value="date">Date</option>
+			<option value="boolean">Boolean</option>
+			<option value="object">Object</option>
+			<option value="file">File</option>
+		</select>
+		<select class="association_type">
+			<option value=""></option>
+			<option value="many_to_many">Many-To-Many</option>
+			<option value="many_to_one">Many-To-One</option>
+		</select>
+		<select class="boolean">
+			<option value="false">False</option>
+			<option value="true">True</option>
+		</select>
+		<select class="fieldlevel">
+			<option value="">None</option>
+			<option value="primary">Primary</option>
+			<option value="query">Query</option>
+		</select>
+	</div>
+
+	<div class="edit" style="display:none;">
+		<span class="edit" title="Edit" style="display:none; padding:3px; cursor:pointer;">
+			<img alt="edit" th:src="@{/images/icon-pencil.png}" width="12" height="12">
+		</span>
+		<span class="save" title="Save" style="display:none; padding:2px; cursor:pointer;">
+			<img alt="save" th:src="@{/images/icon-checkmark.png}" width="14" height="14">
+		</span>
+		<span class="info" title="Info" style="display:none; padding:2px; cursor:pointer; margin-left: 2px">
+			<img alt="info" th:src="@{/images/icon-info.png}" width="13" height="13">
+		</span>
+	</div>
+
+	<div id="dialog-form" title="Create localized meta document">
+		<p class="validateTips">All fields are required.</p>
+		<form>
+			<fieldset>
+				<!-- Allow form submission with keyboard without duplicating the dialog button -->
+				<input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
+
+				<label>Name</label>
+				<input type="text" class="ui-widget-content ui-corner-all">
+			</fieldset>
+		</form>
+	</div>
+
+</body>
+
+<script th:src="@{/js/metascript.js}"></script>
+<script type="text/javascript" th:inline="javascript">
+
+	var client = /*[[${client}]]*/ "";
+	var metadata = /*[[${metadata}]]*/ "";
+	var localizations = /*[[${localizations}]]*/ "";
+	var allowMultipleEntity = true;
+	var metaBaseURL = "/v1/metadata/" + client;
+	var ids = [];
+	localizations.forEach(element => {
+		ids.push(metadata[element].id);
+	});
+	var currentMetadata = metadata[localizations[0]];
+
+	var allFields = $("#dialog-form fieldset input[type=text], select");
+	var dialog = $("#dialog-form").dialog({
+		autoOpen: false,
+		height: 400,
+		width: 350,
+		modal: true,
+		buttons: {
+			"Create": addDocument,
+			Cancel: function () {
+				dialog.dialog("close");
+			}
+		},
+		close: function () {
+			form[0].reset();
+			allFields.removeClass("ui-state-error");
+		}
+	});
+
+	var form = dialog.find("form").on("submit", function (event) {
+		event.preventDefault();
+		addDocument();
+	});
+
+	// populate create button
+	populateCreateButton();
+
+	// load navigator
+	loadToolbar(client, true, true, localizations, null);
+
+	// Populate metadata
+	loadMetadata(currentMetadata);
+
+	// on localization value change
+	$(".toolbar .localization select").selectmenu({
+		change: function () {
+			var localization = $(".toolbar .localization select").val();
+
+			// refresh metadata
+			getMetadata();
+
+			currentMetadata = metadata[localization];
+			loadMetadata(currentMetadata);
+		}
+	});
+
+</script>
+
+</html>

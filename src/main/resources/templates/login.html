@@ -1,0 +1,96 @@
+<html>
+
+<head>
+    <script src="../../js/jquery.min.js"></script>
+    <script src="../../js/commonjs.js"></script>
+    <link rel="stylesheet" href="../../css/style.css">
+    <style>
+        .login_main,
+        .signup_main {
+            position: absolute;
+            left: 50%;
+            top: 30%;
+            width: 14em;
+            height: 6em;
+            margin-top: -3em;
+            margin-left: -7em;
+            color: rgb(130, 130, 130);
+            text-align: center;
+        }
+
+        input:not([type="radio"]) {
+            height: 40px;;
+            text-align: center;
+            width: 100%;
+        }
+
+        input[type="radio"] {
+            margin: 10px;
+        }
+
+        button {
+            width: 40%;
+            font-size: 13;
+            margin-top: 20px;
+            color: rgb(100, 100, 100);
+            cursor: pointer;
+        }
+
+        label {
+            font-size: 20;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div th:replace="header"></div>
+
+    <div class="login_main">
+        <form action="/ui/login" method="POST">
+            <label>Welcome</label>
+            <input name="client" placeholder="Client" spellcheck="false" style="margin-top: 30px;" />
+            <button>Enter</button>
+        </form>
+    </div>
+
+    <div class="signup_main" style="display:none">
+        <form action="/ui/signup" method="POST">
+            <label>Ready to Join!</label>
+            <input name="client" placeholder="Client" spellcheck="false" style="margin-top: 30px;" />
+            <input name="localization" placeholder="Default Localization" spellcheck="false" style="margin-top:1px" />
+            <br>
+            <input name="metadata" type="radio" value="false" style="margin-top:15px"/>Simple
+            <input name="metadata" type="radio" value="true" checked="checked"/>Metadata
+            <button>Create</button>
+        </form>
+    </div>
+
+</body>
+<script type="text/javascript" th:inline="javascript">
+    $(".signup").click(function () {
+        $(".signup").hide();
+        $(".login").show();
+        $(".login_main").hide();
+        $(".signup_main").show();
+    });
+    $(".login").click(function () {
+        $(".login").hide();
+        $(".signup").show();
+        $(".signup_main").hide();
+        $(".login_main").show();
+        var client = $("input.client:visible").val();
+    });
+
+    var error = /*[[${error}]]*/ "";
+    var tab = /*[[${tab}]]*/ "";
+    if (error == null || error == "") {
+        $(".login").click();
+    } else {
+        $("." + tab).click();
+        notifyError(error);
+    }
+
+</script>
+
+</html>

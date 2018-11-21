@@ -1,0 +1,114 @@
+<html>
+
+<head>
+	<script src="../../js/jquery.min.js"></script>
+	<script src="../../js/jquery-1.12.4.js"></script>
+	<script src="../../js/jquery-ui.js"></script>
+	<script src="../../js/commonjs.js"></script>
+	<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+	<link rel="stylesheet" href="../../css/style.css">
+</head>
+
+<body>
+
+	<div th:replace="header"></div>
+
+	<div class="main" style="text-align: center;">
+		<textarea autocorrect="off" autocapitalize="off" spellcheck="false" style="width:100%; height:70%; font-weight: 100; resize:none;"></textarea>
+		<button class="update" style="font-size: 13; width: 100px; margin-top: 10px;">Update</button>
+	</div>
+
+</body>
+
+<script type="text/javascript" th:inline="javascript">
+
+	function populateSimpledata(json){
+		var jsonClone = JSON.parse(JSON.stringify(json));
+		delete jsonClone.id;
+		delete jsonClone.client;
+		delete jsonClone.environment;
+		delete jsonClone.localization;
+		delete jsonClone.default_doc;
+		$(".main textarea").val(JSON.stringify(jsonClone, undefined, 4));
+	}
+
+	function reload() {
+		var defaultEnv = $(".toolbar .environment select").val();
+		var defaultLoc = $(".toolbar .localization select").val();
+
+		// refresh appdata
+		// getSimpledata();
+
+		simpleJsonObj = simpledata[defaultEnv][defaultLoc];
+		id = simpleJsonObj["id"];
+		default_doc = simpleJsonObj["default_doc"];
+		populateSimpledata(simpleJsonObj);
+	}
+
+	var client = /*[[${client}]]*/ "";
+	var simpledata = /*[[${simpledata}]]*/ "";
+	var environments = /*[[${environments}]]*/ "";
+	var envLocalizationMap = /*[[${localization_map}]]*/ "";
+	var baseurl = "/v1/client/" + client;
+	
+	// load navigator
+	var defaultEnv = environments[0];
+	var defaultLoc = envLocalizationMap[defaultEnv][0];
+	loadToolbar(client, false, false, envLocalizationMap[defaultEnv], environments);
+
+	// on environment value change
+	var environmentSelect = $(".toolbar .environment select");
+	environmentSelect.selectmenu({
+		change: function () {
+			var environment = $(this).val();
+			var localizations = envLocalizationMap[environment];
+
+			var select = $(".toolbar .localization select");
+			select.selectmenu("destroy");
+
+			var optionRef = select.children("option").remove()[0];
+			localizations.forEach(function (elem) {
+				select.append($(optionRef).clone().text(elem).val(elem));
+			});
+			$(".toolbar .localization").append(select);
+			select.selectmenu();
+
+			reload();
+		}
+	});
+	// on localization value change
+	$(".toolbar .localization select").selectmenu({
+		change: function () {
+			reload();
+		}
+	});
+
+	// Populate appdata
+	var simpleJsonObj = simpledata[defaultEnv][defaultLoc];
+	var id = simpleJsonObj["id"];
+	var default_doc = simpleJsonObj["default_doc"];
+	populateSimpledata(simpleJsonObj);
+
+	$(".update").click(function(){
+		var json = $(".main textarea").val();
+		var dataObject = new Object();
+		var jsonDoc;
+		try {
+			jsonDoc = JSON.parse(json);
+		}
+		catch(err) {
+			notifyError("Wrong json format. Please correct it.")
+			return false;
+		}
+		dataObject["id"] = id;
+		dataObject["environment"] = defaultEnv;
+		dataObject["localization"] = defaultLoc;
+		dataObject["default_doc"] = default_doc;
+		dataObject["doc"] = jsonDoc;
+		ajaxCall(baseurl, "replace", dataObject);
+		populateSimpledata(jsonDoc);
+	});
+
+</script>
+
+</html>

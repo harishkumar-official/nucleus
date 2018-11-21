@@ -1,0 +1,55 @@
+<div class="navigator">
+    <img class="logo" height="80%" th:src="@{/images/logo.gif}">
+    <img class="signup" title="Create" height="70%" th:src="@{/images/icon-create.png}" style="float:right; cursor:pointer; display:none">
+    <img class="login" title="Login" height="70%" th:src="@{/images/icon-login.png}" style="float:right; cursor:pointer; display:none">
+
+    <div class="toolbar" style="float:right; display:none">
+        <span class="localization" style="display:inline-block"></span>
+        <span class="environment" th:if="${environments} != null" style="display:inline-block"></span>
+        <span class="metadata" th:if="${simpledata} == null" style="display:inline-block">
+            <select name="datatype">
+                <option value="metadata">Metadata</option>
+                <option value="appdata">Appdata</option>
+            </select>
+        </span>
+        <span class="menubar">
+            <span class="client" th:text="${client}"></span>
+            <span class="menu">
+                <button class="create">Create</button>
+                <!-- <button class="clone">Clone</button> -->
+            </span>
+        </span>
+
+        <select class="select" style="display:none">
+            <option value="">None</option>
+        </select>
+
+        <!-- hidden forms -->
+        <form class="metaform" action="/ui/metadata" method="GET" style="display:none">
+            <input name="client" />
+        </form>
+        <form class="appform" action="/ui/appdata" method="GET" style="display:none">
+            <input name="client" />
+        </form>
+    </div>
+</div>
+
+<div class="notify_success" style="display:none;"></div>
+<div class="notify_error" style="display:none;"></div>
+
+<script type="text/javascript" th:inline="javascript">
+    $(".logo").click(function () {
+        window.location.href = "/ui";
+    });
+
+    $(".client").click(function (e) {
+        var menu = $(".menu");
+        if (menu.is(":visible")) {
+            $(".menu").hide();
+            $(".metadata, .environment, .localization").slideDown(200);
+        } else {
+            $(".metadata, .environment, .localization").hide();
+            $(".menu").slideDown(200);
+        }
+    });
+</script>

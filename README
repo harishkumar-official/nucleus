@@ -1,0 +1,8 @@
+Nucleus is a generic configuration application.
+
+The core has two parts -
+1. Metadata - Here you define your entities, type_definitions, fields, global_fields etc. 
+2. Appdata  - Here you assign the real values to the fields you created in metadata.
+
+Additionally,
+There's a capibility of creating simple json of configuration data as well.

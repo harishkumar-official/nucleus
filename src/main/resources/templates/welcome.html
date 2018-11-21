@@ -1,0 +1,51 @@
+<html>
+
+<head>
+	<script src="../../js/jquery.min.js"></script>
+	<script src="../../js/commonjs.js"></script>
+	<link rel="stylesheet" href="../../css/style.css">
+	<style>
+		table {
+			border-collapse: collapse;
+			margin-left: 30px;
+		}
+
+		table,
+		th,
+		td {
+			border: 1px solid black;
+			padding: 7px;
+			text-align: left;
+		}
+
+		a {
+			color: black;
+		}
+	</style>
+</head>
+
+<body>
+
+	<div th:replace="header"></div>
+
+	<div class="main">
+	</div>
+
+</body>
+<script type="text/javascript" th:inline="javascript">
+	loadToolbar();
+
+	function getClient() {
+		$.ajax({
+			url: metaBaseURL + "/get?localization=en",
+			async: false
+		})
+			.success(function (data) {
+				jsonObj = data[0];
+			});
+	}
+
+
+</script>
+
+</html>

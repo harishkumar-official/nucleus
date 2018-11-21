@@ -1,0 +1,175 @@
+<html>
+
+<head>
+	<script th:src="@{/js/jquery.min.js}"></script>
+	<script th:src="@{/js/jquery-1.12.4.js}"></script>
+	<script th:src="@{/js/jquery-ui.js}"></script>
+	<script th:src="@{/js/jquery-ui-timepicker-addon.js}"></script>
+	<script th:src="@{/js/commonjs.js}"></script>
+	<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+	<link rel="stylesheet" th:href="@{/css/jquery-ui-timepicker-addon.css}">
+	<link rel="stylesheet" th:href="@{/css/style.css}">
+	<style>
+		.fieldtype,
+		.subtype {
+			color: grey;
+		}
+
+		.global_fields {
+			padding-bottom: 3px;
+		}
+
+		.global_fields label {
+			font-size: 10;
+			color: grey;
+		}
+
+		.global_fields>span {
+			margin-left: 3px;
+		}
+
+		.primary {
+			margin-top: 5px;
+			margin-bottom: 5px;
+		}
+
+		.doclist>label,
+		.docdata>label {
+			margin-left: 3px;
+			font-size: 10;
+			color: grey;
+		}
+
+		.doclist .doc {
+			background-color: rgb(246, 246, 246);
+			border-bottom: 1px solid rgb(232, 232, 232);
+			padding: 10px;
+			color: rgb(160, 160, 160);
+			cursor: pointer;
+		}
+
+		.doclist .doc:hover {
+			background-color: rgb(236, 236, 236);
+		}
+	</style>
+</head>
+
+<body>
+
+	<div th:replace="header"></div>
+
+	<div class="main">
+		<div class="global_fields"></div>
+		<div class="doclist" style="width: 250px; float: left; background-color:rgb(246, 246, 246); overflow-y:scroll;"></div>
+		<div class="docdata" style=" overflow-y:scroll"></div>
+	</div>
+
+	<div class="empty"></div>
+	<div class="input" style="display:none;">
+		<span style="display:inline-block; width:185px; overflow: hidden;"></span>
+		<input style="width:185px" type="text" readonly/>
+		<select style="width:185px" class="select" disabled>
+			<option value="">None</option>
+		</select>
+		<select style="width:185px" class="boolean" disabled>
+			<option value="">None</option>
+			<option value="true">True</option>
+			<option value="false">False</option>
+		</select>
+		<button style="display:none"></button>
+	</div>
+
+	<div class="edit" style="display:none;">
+		<span class="edit" title="Edit" style="display:none; padding:3px; cursor:pointer;">
+			<img alt="edit" th:src="@{/images/icon-pencil.png}" width="12">
+		</span>
+		<span class="save" title="Save" style="display:none; padding:2px; cursor:pointer;">
+			<img alt="save" th:src="@{/images/icon-checkmark.png}" width="14">
+		</span>
+		<span class="info" title="Info" style="display:none; padding:2px; cursor:pointer; margin-left: 2px">
+			<img alt="info" th:src="@{/images/icon-info.png}" width="13">
+		</span>
+		<button class="add" style="display:none">Add</button>
+	</div>
+
+	<div id="dialog-form" title="Create new document">
+		<p class="validateTips">All primary fields are required.</p>
+		<form>
+			<fieldset>
+				<!-- Allow form submission with keyboard without duplicating the dialog button -->
+				<input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
+
+				<label>Name</label>
+				<input type="text" class="ui-widget-content ui-corner-all">
+			</fieldset>
+		</form>
+	</div>
+
+</body>
+
+<script th:src="@{/js/appscript.js}"></script>
+<script type="text/javascript" th:inline="javascript">
+
+	var client = /*[[${client}]]*/ "";
+	var metadata = /*[[${metadata}]]*/ "";
+	var appdata = /*[[${appdata}]]*/ "";
+	var entity = /*[[${entity}]]*/ "";
+
+	var metaBaseURL = "/v1/metadata/" + client;
+	var clientBaseURL = "/v1/client/" + client;
+
+	var globalFields = metadata.global_fields;
+	var entities = metadata.entities;
+	var typeDef = metadata.type_definitions;
+
+	var typeDefMap = new Object();
+	typeDef.forEach(type => {
+		typeDefMap[type.typename] = type;
+	});
+
+	var entityMap = new Object();
+	entities.forEach(entity => {
+		entityMap[entity.entityname] = entity;
+	});
+
+	var allFields = $("#dialog-form fieldset input[type=text], select");
+	var dialog = $("#dialog-form").dialog({
+		autoOpen: false,
+		height: 400,
+		width: 350,
+		modal: true,
+		buttons: {
+			"Create": addDocument,
+			Cancel: function () {
+				dialog.dialog("close");
+			}
+		},
+		close: function () {
+			form[0].reset();
+			allFields.removeClass("ui-state-error");
+		}
+	});
+
+	var form = dialog.find("form").on("submit", function (event) {
+		event.preventDefault();
+		addDocument();
+	});
+
+	// load navigator
+	loadToolbar(client, true, false, null, null);
+
+	// load entity selector
+	loadEntitySelector(entityMap);
+
+	// load global fields
+	loadGlobalFields(globalFields);
+
+	// Populate metadata
+	populateMetadata();
+
+	// Populate doclist
+	populateDoclist(appdata);
+
+</script>
+
+</html>

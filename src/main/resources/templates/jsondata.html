@@ -1,0 +1,26 @@
+<html>
+<head>
+<script src="../../jquery.min.js"></script>
+<script src="../../jquery-1.12.4.js"></script>
+<script src="../../jquery-ui.js"></script>
+</head>
+<body>
+
+<div class="main">
+		<h4>Update Json Client</h4>
+		<form action="#" th:action="@{/client/{cln}/json/update(cln=${client})}" method="post">
+			<p>Id: <input type="text" name="id" /></p>
+			<p><input type="text" name="localization" hidden="hidden" th:value="${localization}"/></p>
+			<p><input type="text" name="environment" hidden="hidden" th:value="${environment}"/></p>
+			<p>Default: <input type="boolean" name="default" /></p>
+			<p>Doc Json: <input type="text" name="doc" /></p>
+			<input type="submit" value="Update"/>
+		</form>
+</div>
+
+</body>
+<script src="../../metascript.js"></script>
+<script type="text/javascript" th:inline="javascript">
+
+</script>
+</html>

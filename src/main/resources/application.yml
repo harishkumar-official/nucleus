@@ -1,0 +1,29 @@
+---
+# Spring Configuration
+spring:
+  profiles:
+    active: dev
+  mvc:
+    view:
+      prefix: classpath:/templates/
+      suffix: .html
+
+#Mongo
+mongohost: localhost:27017
+
+#AWS
+amazons3:
+  proxy:
+    url: https://bucketname.s3-us-west-2.amazonaws.com
+    bucketName: bucketname
+    region: us-west-2
+
+server:
+  port: 8080
+  tomcat:
+    max-threads: 1
+    access-log-enabled: true
+    access-log-pattern: "%t lbip=%h identd=%l user=%u status=%s method=%m url=%U bytes=%b duration=%D"
+    use-relative-redirects: true
+
+
