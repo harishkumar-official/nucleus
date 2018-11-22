@@ -273,28 +273,9 @@
 	});
 	var currentMetadata = metadata[localizations[0]];
 
-	var allFields = $("#dialog-form fieldset input[type=text], select");
-	var dialog = $("#dialog-form").dialog({
-		autoOpen: false,
-		height: 400,
-		width: 350,
-		modal: true,
-		buttons: {
-			"Create": addDocument,
-			Cancel: function () {
-				dialog.dialog("close");
-			}
-		},
-		close: function () {
-			form[0].reset();
-			allFields.removeClass("ui-state-error");
-		}
-	});
-
-	var form = dialog.find("form").on("submit", function (event) {
-		event.preventDefault();
-		addDocument();
-	});
+	// populate dialog box
+	var dialogFields = $("#dialog-form fieldset input[type=text], select");
+	var dialog = setupDialogBox(dialogFields);
 
 	// populate create button
 	populateCreateButton();

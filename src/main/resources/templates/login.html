@@ -59,9 +59,10 @@
             <label>Ready to Join!</label>
             <input name="client" placeholder="Client" spellcheck="false" style="margin-top: 30px;" />
             <input name="localization" placeholder="Default Localization" spellcheck="false" style="margin-top:1px" />
+            <input name="environment" placeholder="Default Environment" spellcheck="false" style="display:none; margin-top:1px" />
             <br>
-            <input name="metadata" type="radio" value="false" style="margin-top:15px"/>Simple
-            <input name="metadata" type="radio" value="true" checked="checked"/>Metadata
+            <input name="metadata" type="radio" value="false" style="width:auto; margin-top:15px"/>Simple
+            <input name="metadata" type="radio" value="true" style="width:auto" checked="checked"/>Metadata
             <button>Create</button>
         </form>
     </div>
@@ -84,11 +85,24 @@
 
     var error = /*[[${error}]]*/ "";
     var tab = /*[[${tab}]]*/ "";
+    var ismeta = /*[[${ismeta}]]*/ "";
     if (error == null || error == "") {
         $(".login").click();
     } else {
         $("." + tab).click();
         notifyError(error);
+    }
+
+    $("input[name=metadata]").click(function(){
+        if($(this).val() == "false"){
+            $("input[name=environment]").show();
+        }else{
+            $("input[name=environment]").hide();
+        }
+    });
+    if(ismeta == "false"){
+        var input = $("input[name=metadata][value=false]");
+        input.click();
     }
 
 </script>

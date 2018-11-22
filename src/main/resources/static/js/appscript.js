@@ -694,9 +694,7 @@ function loadGlobalFields(globalFields) {
     $(".doclist").css("height", height);
     $(".docdata").css("height", height);
 
-    // add create button
-    // var button = $(".input button").clone().text("Create").attr("style", "height:21px; margin-left:3px;").show();
-    // div.append(button);
+    // populate create button
     var button = $(".menubar .create");
     button.click(function () {
         dialog.dialog("open");
@@ -769,12 +767,12 @@ function loadDocDataAndDocList(id){
 
 function addDocument() {
     var valid = true;
-    allFields.removeClass("ui-state-error");
+    dialogFields.removeClass("ui-state-error");
 
     var errorFlag = false;
     var doc = new Object();
-    allFields = dialog.find("fieldset input[type=text], select");
-    $.each(allFields, function(index, input) {
+    dialogFields = dialog.find("fieldset input[type=text], select");
+    $.each(dialogFields, function(index, input) {
         input = $(input);
         var fieldname = input.attr("name");
         var fieldtype = input.attr("fieldtype");
@@ -798,4 +796,29 @@ function addDocument() {
         }
     }
     return valid;
+}
+
+function setupDialogBox(dialogFields) {
+	var dialog = $("#dialog-form").dialog({
+		autoOpen: false,
+		height: 400,
+		width: 350,
+		modal: true,
+		buttons: {
+			"Create": addDocument,
+			Cancel: function () {
+				dialog.dialog("close");
+			}
+		},
+		close: function () {
+			form[0].reset();
+			dialogFields.removeClass("ui-state-error");
+		}
+	});
+	var form = dialog.find("form").on("submit", function (event) {
+		// for, if somebody presses key enter
+		event.preventDefault();
+		addDocument();
+	});
+	return dialog;
 }

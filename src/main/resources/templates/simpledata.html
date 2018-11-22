@@ -18,96 +18,182 @@
 		<button class="update" style="font-size: 13; width: 100px; margin-top: 10px;">Update</button>
 	</div>
 
+	<div id="dialog-form" title="Create">
+		<p class="validateTips">Choose the category you want to create.</p>
+		<form>
+			<fieldset>
+				<!-- Allow form submission with keyboard without duplicating the dialog button -->
+				<input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
+
+				<input name="create" type="radio" value="environment" style="width:auto" checked="checked" />Environment
+				<input name="create" type="radio" value="localization" style="width:auto" />Localization
+				<input type="text" name="value" class="ui-widget-content ui-corner-all">
+			</fieldset>
+		</form>
+	</div>
+
 </body>
 
 <script type="text/javascript" th:inline="javascript">
 
-	function populateSimpledata(json){
-		var jsonClone = JSON.parse(JSON.stringify(json));
-		delete jsonClone.id;
-		delete jsonClone.client;
-		delete jsonClone.environment;
-		delete jsonClone.localization;
-		delete jsonClone.default_doc;
-		$(".main textarea").val(JSON.stringify(jsonClone, undefined, 4));
+	function createDoc(doc, updateOption) {
+		var success = false;
+		$.ajax({
+			method: "POST",
+			url: baseurl + "/create",
+			async: false,
+			data: JSON.stringify(doc),
+			contentType: 'application/json; charset=UTF-8'
+		}).success(function (data) {
+			if (data) {
+				success = true;
+				if (updateOption == true) {
+					notifySuccess("Updated, Woo hoo!");
+				} else {
+					notifySuccess("Created, Woo hoo!");
+					location.reload();
+				}
+			}
+		}).error(function (e) {
+			notifyResponseError(e);
+		});
+		return success;
 	}
 
-	function reload() {
-		var defaultEnv = $(".toolbar .environment select").val();
-		var defaultLoc = $(".toolbar .localization select").val();
-
-		// refresh appdata
-		// getSimpledata();
-
-		simpleJsonObj = simpledata[defaultEnv][defaultLoc];
-		id = simpleJsonObj["id"];
-		default_doc = simpleJsonObj["default_doc"];
-		populateSimpledata(simpleJsonObj);
+	function addDocument() {
+		var inputs = dialog.find("fieldset input[type=text]");
+		var doc = new Object();
+		var choice = $("input[type=radio][name=create]:checked").val();
+		if (choice == "localization") {
+			doc["environment"] = $(".toolbar .environment select").val();
+		} else {
+			doc["localization"] = $(".toolbar .localization select").val();
+		}
+		var input = $("input[name=value]");
+		var value = input.val();
+		if (!value || value == "") {
+			input.addClass("ui-state-error");
+			return false;
+		}
+		doc[choice] = value;
+		doc["doc"] = new Object();
+		createDoc(doc, false);
 	}
 
-	var client = /*[[${client}]]*/ "";
-	var simpledata = /*[[${simpledata}]]*/ "";
-	var environments = /*[[${environments}]]*/ "";
-	var envLocalizationMap = /*[[${localization_map}]]*/ "";
-	var baseurl = "/v1/client/" + client;
-	
-	// load navigator
-	var defaultEnv = environments[0];
-	var defaultLoc = envLocalizationMap[defaultEnv][0];
-	loadToolbar(client, false, false, envLocalizationMap[defaultEnv], environments);
-
-	// on environment value change
-	var environmentSelect = $(".toolbar .environment select");
-	environmentSelect.selectmenu({
-		change: function () {
-			var environment = $(this).val();
-			var localizations = envLocalizationMap[environment];
-
-			var select = $(".toolbar .localization select");
-			select.selectmenu("destroy");
-
-			var optionRef = select.children("option").remove()[0];
-			localizations.forEach(function (elem) {
-				select.append($(optionRef).clone().text(elem).val(elem));
-			});
-			$(".toolbar .localization").append(select);
-			select.selectmenu();
-
-			reload();
-		}
-	});
-	// on localization value change
-	$(".toolbar .localization select").selectmenu({
-		change: function () {
-			reload();
-		}
-	});
-
-	// Populate appdata
-	var simpleJsonObj = simpledata[defaultEnv][defaultLoc];
-	var id = simpleJsonObj["id"];
-	var default_doc = simpleJsonObj["default_doc"];
-	populateSimpledata(simpleJsonObj);
-
-	$(".update").click(function(){
+	function update() {
 		var json = $(".main textarea").val();
 		var dataObject = new Object();
 		var jsonDoc;
 		try {
 			jsonDoc = JSON.parse(json);
 		}
-		catch(err) {
+		catch (err) {
 			notifyError("Wrong json format. Please correct it.")
 			return false;
 		}
-		dataObject["id"] = id;
+
 		dataObject["environment"] = defaultEnv;
 		dataObject["localization"] = defaultLoc;
-		dataObject["default_doc"] = default_doc;
 		dataObject["doc"] = jsonDoc;
-		ajaxCall(baseurl, "replace", dataObject);
+
+		var success = false;
+		if (!currentJsonObj["id"]) {
+			// create
+			success = createDoc(dataObject, true);
+		} else {
+			// update
+			dataObject["id"] = currentJsonObj["id"];
+			success = ajaxCall(baseurl, "replace", dataObject);
+		}
+
 		populateSimpledata(jsonDoc);
+		if (success = true) {
+			currentJsonObj = jsonDoc;
+			simpledata[defaultEnv][defaultLoc] = jsonDoc;
+		}
+	}
+
+	function reload() {
+		defaultEnv = $(".toolbar .environment select").val();
+		defaultLoc = $(".toolbar .localization select").val();
+		currentJsonObj = simpledata[defaultEnv][defaultLoc];
+		if (!currentJsonObj) {
+			currentJsonObj = new Object();
+		}
+
+		populateSimpledata(currentJsonObj);
+	}
+
+	function populateSimpledata(json) {
+		var jsonClone = JSON.parse(JSON.stringify(json));
+		delete jsonClone.id;
+		delete jsonClone.client;
+		delete jsonClone.environment;
+		delete jsonClone.localization;
+		$(".main textarea").val(JSON.stringify(jsonClone, undefined, 4));
+	}
+
+	function setupDialogBox(dialogFields) {
+		var dialog = $("#dialog-form").dialog({
+			autoOpen: false,
+			height: 400,
+			width: 350,
+			modal: true,
+			buttons: {
+				"Create": addDocument,
+				Cancel: function () {
+					dialog.dialog("close");
+				}
+			},
+			close: function () {
+				form[0].reset();
+				dialogFields.removeClass("ui-state-error");
+			}
+		});
+		var form = dialog.find("form").on("submit", function (event) {
+			// for, if somebody presses key enter
+			event.preventDefault();
+			addDocument();
+		});
+		return dialog;
+	}
+
+	var client = /*[[${client}]]*/ "";
+	var simpledata = /*[[${simpledata}]]*/ "";
+	var environments = /*[[${environments}]]*/ "";
+	var localizations = /*[[${localizations}]]*/ "";
+	var baseurl = "/v1/client/" + client + "/json";
+
+	var defaultEnv = environments[0];
+	var defaultLoc = localizations[0];
+	var currentJsonObj = simpledata[defaultEnv][defaultLoc];
+
+	// load navigator
+	loadToolbar(client, false, false, localizations, environments);
+
+	// on localization/environment value change
+	$(".toolbar .localization select, .toolbar .environment select").selectmenu({
+		change: function () {
+			reload();
+		}
 	});
+
+	// assign update
+	$(".update").click(function () {
+		update();
+	});
+
+	// populate dialog box
+	var dialogFields = $("#dialog-form fieldset input[type=text]");
+	var dialog = setupDialogBox(dialogFields);
+
+	var button = $(".menubar .create");
+	button.click(function () {
+		dialog.dialog("open");
+	});
+
+	// Populate appdata
+	populateSimpledata(currentJsonObj);
 
 </script>
 

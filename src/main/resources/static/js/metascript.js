@@ -842,12 +842,12 @@ function loadMetadata(json) {
 
 function addDocument() {
 	var valid = true;
-	allFields.removeClass("ui-state-error");
+	dialogFields.removeClass("ui-state-error");
 
 	var errorFlag = false;
 	var doc = new Object();
-	allFields = dialog.find("fieldset input[type=text], select");
-	$.each(allFields, function (index, input) {
+	dialogFields = dialog.find("fieldset input[type=text], select");
+	$.each(dialogFields, function (index, input) {
 		input = $(input);
 		var fieldname = input.attr("name");
 		var value = input.val().trim();
@@ -885,4 +885,29 @@ function populateCreateButton() {
 	button.click(function () {
 		dialog.dialog("open");
 	});
+}
+
+function setupDialogBox(dialogFields) {
+	var dialog = $("#dialog-form").dialog({
+		autoOpen: false,
+		height: 400,
+		width: 350,
+		modal: true,
+		buttons: {
+			"Create": addDocument,
+			Cancel: function () {
+				dialog.dialog("close");
+			}
+		},
+		close: function () {
+			form[0].reset();
+			dialogFields.removeClass("ui-state-error");
+		}
+	});
+	var form = dialog.find("form").on("submit", function (event) {
+		// for, if somebody presses key enter
+		event.preventDefault();
+		addDocument();
+	});
+	return dialog;
 }

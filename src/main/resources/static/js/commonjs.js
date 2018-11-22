@@ -98,7 +98,7 @@ function ajaxCall(baseurl, type, dataObject){
     } else if(type == "update"){
         url = baseurl + "/update";
     } else if(type == "replace"){
-        url = baseurl + "/json/replace";
+        url = baseurl + "/replace";
     } else if(type == "primary"){
         url = baseurl + "/primary/update";
     }

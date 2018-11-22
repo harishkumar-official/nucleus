@@ -10,6 +10,7 @@ import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -17,7 +18,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
-import com.nucleus.constants.Environment;
 import com.nucleus.constants.Fields;
 import com.nucleus.exception.NucleusException;
 import com.nucleus.metadata.Metadata;
@@ -41,9 +41,11 @@ public class UiController {
    * Returns login page.
    */
   @RequestMapping(value = "", method = RequestMethod.GET)
-  public String start(ModelMap model, @ModelAttribute("error") String error, @ModelAttribute("tab") String tab) {
+  public String start(ModelMap model, @ModelAttribute("error") String error, @ModelAttribute("tab") String tab,
+      @ModelAttribute("ismeta") String ismeta) {
     model.put("error", error);
     model.put("tab", tab);
+    model.put("ismeta", ismeta);
     return "login";
   }
 
@@ -66,12 +68,17 @@ public class UiController {
   public ModelAndView login(ModelMap model, @RequestParam String client) {
     model.put("client", client);
 
-    boolean response = dataService.clientExists(client, null);
-    if (response) {
-      return redirect(model, client, false);
+    if (!StringUtils.isEmpty(client)) {
+      boolean response = dataService.clientExists(client);
+      if (response) {
+        return redirect(model, client, false);
+      }
+
+      model.put("error", "Sorry, client '" + client + "' doesn't exists.");
+    } else {
+      model.put("error", "Sorry, fields are missing.");
     }
 
-    model.put("error", "Sorry, client '" + client + "' doesn't exists.");
     model.put("tab", "login");
     return new ModelAndView("redirect:/ui", model);
   }
@@ -80,20 +87,29 @@ public class UiController {
    * Returns data page on successful client creation.
    */
   @RequestMapping(value = "/signup", method = RequestMethod.POST)
-  public ModelAndView create(ModelMap model, @RequestParam String client, @RequestParam String localization,
-      @RequestParam boolean metadata) {
-    boolean response;
-    if (metadata) {
-      response = createMetaClient(client, localization);
-    } else {
-      response = createSimpleClient(client, localization);
-    }
-
+  public ModelAndView create(ModelMap model, @RequestParam String client, @RequestParam boolean metadata,
+      @RequestParam String localization, @RequestParam(required = false) String environment) {
     model.put("client", client);
-    if (response) {
-      return redirect(model, client, true);
+
+    if (!StringUtils.isEmpty(client) && !StringUtils.isEmpty(localization)) {
+      boolean response;
+      if (metadata) {
+        response = createMetaClient(client, localization);
+      } else {
+        response = createSimpleClient(client, localization, environment);
+      }
+
+      if (response) {
+        return redirect(model, client, true);
+      }
+
+      model.put("error", "Sorry, client '" + client + "/" + localization + "' already exists.");
+    } else {
+      model.put("error", "Sorry, fields are missing.");
     }
-    model.put("error", "Sorry, client '" + client + "/" + localization + "' already exists.");
+    if (!metadata) {
+      model.put("ismeta", false);
+    }
     model.put("tab", "signup");
     return new ModelAndView("redirect:/ui", model);
   }
@@ -110,13 +126,16 @@ public class UiController {
     return true;
   }
 
-  private boolean createSimpleClient(String client, String localization) {
-    try {
-      dataService.createJson(client, null, Environment.development.name(), localization);
-    } catch (Exception e) {
-      return false;
+  private boolean createSimpleClient(String client, String localization, String environment) {
+    if (!StringUtils.isEmpty(environment)) {
+      try {
+        dataService.createJson(client, null, environment, localization);
+      } catch (Exception e) {
+        return false;
+      }
+      return true;
     }
-    return true;
+    return false;
   }
 
   /**
@@ -183,31 +202,23 @@ public class UiController {
     List<Map<String, Object>> data = null;
     data = dataService.getJson(client, null, null, null);
     Set<String> environments = new HashSet<>();
-    Map<String, Set<String>> envLocMap = new HashMap<>();
+    Set<String> localizations = new HashSet<>();
 
-    model.put("simpledata", mapData(data, environments, envLocMap));
+    model.put("simpledata", mapData(data, environments, localizations));
     model.put("client", client);
     model.put("environments", environments);
-    model.put("localization_map", envLocMap);
+    model.put("localizations", localizations);
     return "simpledata";
   }
 
   @SuppressWarnings("unchecked")
   private Map<String, Object> mapData(List<Map<String, Object>> data, Set<String> environments,
-      Map<String, Set<String>> envLocMap) {
+      Set<String> localizations) {
     Map<String, Object> envLocDataMap = new HashMap<>();
     data.forEach(d -> {
       String environment = (String) d.get(Fields.ENVIRONMENT);
       String localization = (String) d.get(Fields.LOCALIZATION);
       environments.add(environment);
-
-      Set<String> localizations;
-      if (envLocMap.containsKey(environment)) {
-        localizations = envLocMap.get(environment);
-      } else {
-        localizations = new HashSet<>();
-        envLocMap.put(environment, localizations);
-      }
       localizations.add(localization);
 
       Map<String, Object> localizationMap = null;

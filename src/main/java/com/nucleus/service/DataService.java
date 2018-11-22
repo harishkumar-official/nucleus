@@ -14,9 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.nucleus.constants.Environment;
 import com.nucleus.constants.Fields;
-import com.nucleus.constants.Localization;
 import com.nucleus.database.CollectionName;
 import com.nucleus.database.DatabaseAdapter;
 import com.nucleus.exception.NucleusException;
@@ -43,8 +41,12 @@ public class DataService {
     this.amazonS3Adapter = amazonS3Adapter;
     this.associationService = associationService;
   }
+  
+  public boolean clientExists(String client) {
+    return clientExistsWithLocalization(client, null);
+  }
 
-  public boolean clientExists(String client, String localization) {
+  public boolean clientExistsWithLocalization(String client, String localization) {
     boolean exists = true;
     if (metadataService.getMetadata(client, localization) == null) {
       exists = false;
@@ -57,25 +59,17 @@ public class DataService {
     return exists;
   }
 
+  private void checkClientExists(String client, String environment, String localization) {
+    Bson query = QueryService.getQuery(client, null, environment, localization);
+    List docs = databaseAdapter.get(query, Fields.SIMPLE_CLIENT_DEFAULT_ENTITY);
+    if (!docs.isEmpty()) {
+      throw new NucleusException("Already exists.");
+    }
+  }
+
   public void checkClientExists(String client, String localization) {
-    if (clientExists(client, localization)) {
+    if (clientExistsWithLocalization(client, localization)) {
       throw new NucleusException("Client '" + client + "' with localization '" + localization + "' already exists.");
-    }
-  }
-
-  private void checkEnvironment(Object field) {
-    try {
-      Environment.valueOf((String) field);
-    } catch (Exception e) {
-      throw new NucleusException("Invalid environment '" + field + "'. Valid values " + Environment.allValues(), e);
-    }
-  }
-
-  private void checkLocalization(Object field) {
-    try {
-      Localization.valueOf((String) field);
-    } catch (Exception e) {
-      throw new NucleusException("Invalid localization '" + field + "'. Valid values " + Localization.allValues(), e);
     }
   }
 
@@ -419,9 +413,9 @@ public class DataService {
 
   public String createJson(String client, Map<String, Object> doc, String environment, String localization) {
     checkMandatoryField(client, Fields.CLIENT);
-    checkEnvironment(environment);
-    checkLocalization(localization);
-    checkClientExists(client, localization);
+    checkMandatoryField(environment, Fields.ENVIRONMENT);
+    checkMandatoryField(localization, Fields.LOCALIZATION);
+    checkClientExists(client, environment, localization);
 
     Document document;
     if (doc == null) {
@@ -437,8 +431,8 @@ public class DataService {
 
   public Long replaceJson(String client, String id, Map<String, Object> doc, String environment, String localization) {
     checkMandatoryField(client, Fields.CLIENT);
-    checkEnvironment(environment);
-    checkLocalization(localization);
+    checkMandatoryField(environment, Fields.ENVIRONMENT);
+    checkMandatoryField(localization, Fields.LOCALIZATION);
     checkMandatoryField(doc, "doc");
     checkMandatoryField(id, "id");
 
