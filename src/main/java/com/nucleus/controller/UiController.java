@@ -68,15 +68,14 @@ public class UiController {
   public ModelAndView login(ModelMap model, @RequestParam String client) {
     model.put("client", client);
 
-    if (!StringUtils.isEmpty(client)) {
+    if (StringUtils.isEmpty(client)) {
+      model.put("error", "Sorry, fields are missing.");
+    } else {
       boolean response = dataService.clientExists(client);
       if (response) {
         return redirect(model, client, false);
       }
-
       model.put("error", "Sorry, client '" + client + "' doesn't exists.");
-    } else {
-      model.put("error", "Sorry, fields are missing.");
     }
 
     model.put("tab", "login");
@@ -91,22 +90,23 @@ public class UiController {
       @RequestParam String localization, @RequestParam(required = false) String environment) {
     model.put("client", client);
 
-    if (!StringUtils.isEmpty(client) && !StringUtils.isEmpty(localization)) {
+    if (StringUtils.isEmpty(client) || StringUtils.isEmpty(localization)) {
+      model.put("error", "Sorry, fields are missing.");
+    } else if (dataService.clientExists(client)) {
+      model.put("error", "Sorry, client already exists.");
+    } else {
       boolean response;
       if (metadata) {
         response = createMetaClient(client, localization);
       } else {
         response = createSimpleClient(client, localization, environment);
       }
-
       if (response) {
         return redirect(model, client, true);
       }
-
       model.put("error", "Sorry, client '" + client + "/" + localization + "' already exists.");
-    } else {
-      model.put("error", "Sorry, fields are missing.");
     }
+
     if (!metadata) {
       model.put("ismeta", false);
     }
@@ -165,11 +165,11 @@ public class UiController {
   }
 
   /**
-   * Returns meta-client app data html.
+   * Returns meta-client app-data html.
    */
   @RequestMapping(value = "/appdata", method = RequestMethod.GET)
   public String appdata(ModelMap model, @RequestParam String client) {
-    Metadata metadata = dataService.getMetaDataObject(client, null);
+    Metadata metadata = dataService.getMetadataObject(client);
     if (metadata == null) {
       throw new NucleusException("Invalid Client");
     }

@@ -320,6 +320,11 @@ public class DatabaseAdapter {
     return docs;
   }
 
+  public boolean exists(Bson query, String collectionName) {
+    long count = getCollection(collectionName).countDocuments(query);
+    return count > 0 ? true : false;
+  }
+
 
   /*-----Helpers-----*/
 

@@ -17,6 +17,10 @@ public class QueryService {
 
   public static final String _ID = "_id";
 
+  public static Bson getQuery(String client) {
+    return Filters.eq(Fields.CLIENT, client);
+  }
+
   public static Bson getQuery(String client, String localization) {
     List<Bson> list = new ArrayList<Bson>();
     if (!StringUtils.isEmpty(client)) {

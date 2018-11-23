@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.bson.Document;
 import org.bson.conversions.Bson;
@@ -41,37 +42,6 @@ public class DataService {
     this.amazonS3Adapter = amazonS3Adapter;
     this.associationService = associationService;
   }
-  
-  public boolean clientExists(String client) {
-    return clientExistsWithLocalization(client, null);
-  }
-
-  public boolean clientExistsWithLocalization(String client, String localization) {
-    boolean exists = true;
-    if (metadataService.getMetadata(client, localization) == null) {
-      exists = false;
-      Bson query = QueryService.getQuery(client, localization);
-	  List docs = databaseAdapter.get(query, Fields.SIMPLE_CLIENT_DEFAULT_ENTITY);
-      if (!docs.isEmpty()) {
-        exists = true;
-      }
-    }
-    return exists;
-  }
-
-  private void checkClientExists(String client, String environment, String localization) {
-    Bson query = QueryService.getQuery(client, null, environment, localization);
-    List docs = databaseAdapter.get(query, Fields.SIMPLE_CLIENT_DEFAULT_ENTITY);
-    if (!docs.isEmpty()) {
-      throw new NucleusException("Already exists.");
-    }
-  }
-
-  public void checkClientExists(String client, String localization) {
-    if (clientExistsWithLocalization(client, localization)) {
-      throw new NucleusException("Client '" + client + "' with localization '" + localization + "' already exists.");
-    }
-  }
 
   private void checkMandatoryField(Object field, String fieldName) {
     if (field == null || field instanceof String && StringUtils.isEmpty(((String) field).trim())
@@ -100,32 +70,39 @@ public class DataService {
     checkMandatoryField(updates, "updates");
   }
 
-  // form -> field1:value1,field2:value2
+  // query-form -> field1:value1,field2:value2
   private Map<String, Object> parseQuery(String client, String entityName, String query, Metadata meta) {
-    if (!StringUtils.isEmpty(query)) {
-      String[] fields = query.split(",");
-      if (fields.length > 0) {
-        Set<String> globalFieldsSet = meta.getGlobalFieldsSet();
-        Map<String, Object> globalKeyValueMap = new HashMap<>();
-        Map<String, Object> keyValueMap = new HashMap<>();
-        for (String field : fields) {
-          String[] keyValue = field.split(":");
-          if (globalFieldsSet.contains(keyValue[0]) || Fields.ID.equals(keyValue[0])) {
-            if (keyValue.length == 2) {
-              globalKeyValueMap.put(keyValue[0], keyValue[1]);
-            }
-          } else {
-            keyValueMap.put(keyValue[0], keyValue[1]);
-          }
-        }
-        // verify key-value map
-        List<Object> response = metadataService.convertInputUpdateToDbUpdates(keyValueMap, entityName, client, meta);
-        Map<String, Object> verifiedKeyValueMap = (Map<String, Object>) response.get(1);
-        verifiedKeyValueMap.putAll(globalKeyValueMap);
-        return verifiedKeyValueMap;
+    Set<String> globalFieldsSet = meta.getGlobalFieldsSet();
+    Set<String> primaryAndQueryFields = meta.getEntity(entityName).getFields().stream()
+        .filter(field -> field.getFieldLevel() != null
+            && (field.getFieldLevel().equals(FieldLevel.primary) || field.getFieldLevel().equals(FieldLevel.query)))
+        .map(field -> field.getFieldName()).collect(Collectors.toSet());
+
+    String id = null;
+    Map<String, Object> keyValueMap = new HashMap<>();
+    String[] queryFields = query.split(",");
+    for (String field : queryFields) {
+      String[] keyValue = field.split(":");
+      if (keyValue.length < 2) {
+        continue;
+      }
+      String key = keyValue[0].trim();
+      String value = keyValue[1].trim();
+      if (globalFieldsSet.contains(key) || primaryAndQueryFields.contains(key)) {
+        keyValueMap.put(key, value);
+      } else if (Fields.ID.equals(key)) {
+        id = value;
+      } else {
+        throw new NucleusException("Error, can't query on this field - " + key);
       }
     }
-    throw new NucleusException("Bad query.");
+    // verify key-value map
+    List<Object> response = metadataService.convertInputUpdateToDbUpdates(keyValueMap, entityName, client, meta);
+    Map<String, Object> verifiedKeyValueMap = (Map<String, Object>) response.get(1);
+    if (id != null) {
+      verifiedKeyValueMap.put(Fields.ID, id);
+    }
+    return verifiedKeyValueMap;
   }
 
   private String getCollectionName(String client, String entity) {
@@ -158,11 +135,37 @@ public class DataService {
     primaryFields.forEach(field -> updates.remove(field));
   }
 
+  private void checkJsonClientExists(String client, String environment, String localization) {
+	Bson query = QueryService.getQuery(client, null, environment, localization);
+    if (databaseAdapter.exists(query, Fields.SIMPLE_CLIENT_DEFAULT_ENTITY)) {
+      throw new NucleusException("Already exists.");
+    }
+  }
+
+  private void checkMetaClientExists(String client, String localization) {
+	Bson query = QueryService.getQuery(client, localization);
+    if (databaseAdapter.exists(query, CollectionName.metadata.name())) {
+      throw new NucleusException("Client '" + client + "' with localization '" + localization + "' already exists.");
+    }
+  }
+
+  /*-----Client APIs-----*/
+
+  public boolean clientExists(String client) {
+    Bson query = QueryService.getQuery(client);
+    if (databaseAdapter.exists(query, CollectionName.metadata.name())) {
+      return true;
+    }
+    if (databaseAdapter.exists(query, Fields.SIMPLE_CLIENT_DEFAULT_ENTITY)) {
+      return true;
+    }
+    return false;
+  }
 
   /*-----Meta-Data APIs-----*/
 
-  public Metadata getMetaDataObject(String client, String localization) {
-    return metadataService.getMetadata(client, localization);
+  public Metadata getMetadataObject(String client) {
+    return metadataService.getMetadata(client);
   }
 
   public List<Map<String, Object>> getMetaData(String client, String localization) {
@@ -226,7 +229,7 @@ public class DataService {
     checkMandatoryField(client, Fields.CLIENT);
     checkMandatoryField(localization, Fields.LOCALIZATION);
     checkMandatoryField(metadata, Fields.METADATA);
-    checkClientExists(client, localization);
+    checkMetaClientExists(client, localization);
 
     addSerial(metadata);
     metadata.put(Fields.CLIENT, client);
@@ -415,7 +418,7 @@ public class DataService {
     checkMandatoryField(client, Fields.CLIENT);
     checkMandatoryField(environment, Fields.ENVIRONMENT);
     checkMandatoryField(localization, Fields.LOCALIZATION);
-    checkClientExists(client, environment, localization);
+    checkJsonClientExists(client, environment, localization);
 
     Document document;
     if (doc == null) {

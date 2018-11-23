@@ -46,7 +46,7 @@ public class MetadataService {
     Metadata meta = null;
     List<Map<String, Object>> metadatas =
         database.get(QueryService.getQuery(client, localization), CollectionName.metadata.name());
-    if (metadatas != null && !metadatas.isEmpty()) {
+    if (!metadatas.isEmpty()) {
       try {
         Map<String, Object> metaDoc = metadatas.get(0);
         String metaJson = mapper.writeValueAsString(metaDoc);
@@ -290,11 +290,31 @@ public class MetadataService {
     return true;
   }
 
+  private Object parseString(Object value, String fieldType) {
+    if (value instanceof String) {
+      String val = ((String) value).trim();
+      switch (fieldType) {
+        case PrimaryType.FLOAT:
+          return Float.parseFloat(val);
+        case PrimaryType.DOUBLE:
+          return Double.parseDouble(val);
+        case PrimaryType.INTEGER:
+          return Integer.parseInt(val);
+        case PrimaryType.LONG:
+        case PrimaryType.DATE:
+          return Long.parseLong(val);
+        case PrimaryType.BOOLEAN:
+          return Boolean.parseBoolean(val);
+        default:
+          return value;
+      }
+    }
+    return value;
+  }
+
   private Object cast(Object value, String fieldType, Field field, Metadata meta,
       List<AssociationUpdates> associationUpdates) {
-    if (value instanceof String) {
-      value = ((String) value).trim();
-    }
+    value = parseString(value, fieldType);
     try {
       switch (fieldType) {
         case PrimaryType.FILE:
