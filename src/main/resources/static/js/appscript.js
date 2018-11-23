@@ -192,7 +192,7 @@ function assignEdit(div, elem) {
         }
         var subtype = div.children(".subtype").text().trim();
         fieldValue = cast(fullFieldName, fieldValue, fieldtype, subtype);
-        if(!fieldValue || fieldValue == NaN){
+        if (!fieldValue || fieldValue == NaN) {
             notifyError("wrong input");
             return false;
         }
@@ -566,13 +566,13 @@ function populatePrimaryFields(fields, mainDiv) {
             var fullFieldName = field.attr("id");
             var fieldValue = input.val();
             fieldValue = cast(fullFieldName, fieldValue, fieldtype, null);
-            if(!fieldValue || fieldValue == NaN){
+            if (!fieldValue || fieldValue == NaN) {
                 errorFlag = true;
                 return false;
             }
             updates[fullFieldName] = fieldValue;
         });
-        if(errorFlag == true){
+        if (errorFlag == true) {
             notifyError("wrong input");
         }
         // call update API
@@ -722,7 +722,7 @@ function populateDoclist(appdata) {
     }
 }
 
-function appendToDocList(divRef, data, docListDiv){
+function appendToDocList(divRef, data, docListDiv) {
     var docDiv = divRef.clone().addClass("doc");
     docDiv.attr("id", data["id"]);
     primaryFields.forEach(field => {
@@ -753,7 +753,7 @@ function loadDocData(id) {
     $(".docdata").show();
 }
 
-function loadDocDataAndDocList(id){
+function loadDocDataAndDocList(id) {
     // load docdata
     loadDocData(id);
 
@@ -773,26 +773,26 @@ function addDocument() {
     var errorFlag = false;
     var doc = new Object();
     dialogFields = dialog.find("fieldset input[type=text], select");
-    $.each(dialogFields, function(index, input) {
+    $.each(dialogFields, function (index, input) {
         input = $(input);
         var fieldname = input.attr("name");
         var fieldtype = input.attr("fieldtype");
         var value = input.val();
-        value  = cast(fieldname, value, fieldtype, null);
-        if(!value || value == NaN){
+        value = cast(fieldname, value, fieldtype, null);
+        if (!value || value == NaN) {
             errorFlag = true;
             input.addClass("ui-state-error");
             return false;
         }
         doc[fieldname] = value;
     });
-    if(errorFlag == true){
+    if (errorFlag == true) {
         notifyError("Wrong data");
         valid = false;
     }
     if (valid) {
         var response = createAppData(doc);
-        if(response == true){
+        if (response == true) {
             dialog.dialog("close");
         }
     }
@@ -800,26 +800,26 @@ function addDocument() {
 }
 
 function setupDialogBox(dialogFields) {
-	var dialog = $("#dialog-form").dialog({
-		autoOpen: false,
-		height: 400,
-		width: 350,
-		modal: true,
-		buttons: {
-			"Create": addDocument,
-			Cancel: function () {
-				dialog.dialog("close");
-			}
-		},
-		close: function () {
-			form[0].reset();
-			dialogFields.removeClass("ui-state-error");
-		}
-	});
-	var form = dialog.find("form").on("submit", function (event) {
-		// for, if somebody presses key enter
-		event.preventDefault();
-		addDocument();
-	});
-	return dialog;
+    var dialog = $("#dialog-form").dialog({
+        autoOpen: false,
+        height: 400,
+        width: 350,
+        modal: true,
+        buttons: {
+            "Create": addDocument,
+            Cancel: function () {
+                dialog.dialog("close");
+            }
+        },
+        close: function () {
+            form[0].reset();
+            dialogFields.removeClass("ui-state-error");
+        }
+    });
+    var form = dialog.find("form").on("submit", function (event) {
+        // for, if somebody presses key enter
+        event.preventDefault();
+        addDocument();
+    });
+    return dialog;
 }

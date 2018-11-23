@@ -19,7 +19,7 @@
         }
 
         input:not([type="radio"]) {
-            height: 40px;;
+            height: 40px;
             text-align: center;
             width: 100%;
         }
@@ -61,8 +61,8 @@
             <input name="localization" placeholder="Default Localization" spellcheck="false" style="margin-top:1px" />
             <input name="environment" placeholder="Default Environment" spellcheck="false" style="display:none; margin-top:1px" />
             <br>
-            <input name="metadata" type="radio" value="false" style="width:auto; margin-top:15px"/>Simple
-            <input name="metadata" type="radio" value="true" style="width:auto" checked="checked"/>Metadata
+            <input name="metadata" type="radio" value="false" style="width:auto; margin-top:15px" />Simple
+            <input name="metadata" type="radio" value="true" style="width:auto" checked="checked" />Metadata
             <button>Create</button>
         </form>
     </div>
@@ -93,14 +93,14 @@
         notifyError(error);
     }
 
-    $("input[name=metadata]").click(function(){
-        if($(this).val() == "false"){
+    $("input[name=metadata]").click(function () {
+        if ($(this).val() == "false") {
             $("input[name=environment]").show();
-        }else{
+        } else {
             $("input[name=environment]").hide();
         }
     });
-    if(ismeta == "false"){
+    if (ismeta == "false") {
         var input = $("input[name=metadata][value=false]");
         input.click();
     }

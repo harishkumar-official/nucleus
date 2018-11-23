@@ -7,14 +7,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
-
 import com.nucleus.constants.Fields;
 import com.nucleus.database.CollectionName;
 import com.nucleus.database.DatabaseAdapter;
@@ -136,14 +134,14 @@ public class DataService {
   }
 
   private void checkJsonClientExists(String client, String environment, String localization) {
-	Bson query = QueryService.getQuery(client, null, environment, localization);
+    Bson query = QueryService.getQuery(client, null, environment, localization);
     if (databaseAdapter.exists(query, Fields.SIMPLE_CLIENT_DEFAULT_ENTITY)) {
       throw new NucleusException("Already exists.");
     }
   }
 
   private void checkMetaClientExists(String client, String localization) {
-	Bson query = QueryService.getQuery(client, localization);
+    Bson query = QueryService.getQuery(client, localization);
     if (databaseAdapter.exists(query, CollectionName.metadata.name())) {
       throw new NucleusException("Client '" + client + "' with localization '" + localization + "' already exists.");
     }

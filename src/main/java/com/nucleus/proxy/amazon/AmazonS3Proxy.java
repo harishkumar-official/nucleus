@@ -1,7 +1,6 @@
 package com.nucleus.proxy.amazon;
 
 import java.io.File;
-
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.amazonaws.services.s3.model.PutObjectRequest;
@@ -24,8 +23,8 @@ public class AmazonS3Proxy implements IAmazonS3Proxy {
 
   @Override
   public String uploadFileTos3bucket(String fileName, File file) {
-    client.putObject(new PutObjectRequest(bucketName, fileName, file)
-        .withCannedAcl(CannedAccessControlList.PublicRead));
+    client
+        .putObject(new PutObjectRequest(bucketName, fileName, file).withCannedAcl(CannedAccessControlList.PublicRead));
     return fileLinkBucketUrl + fileName;
   }
 

@@ -85,32 +85,32 @@ function notifyResponseError(e) {
     }
 }
 
-function notifyIncomplete(elem){
+function notifyIncomplete(elem) {
     notifyError("UI for this feature ain't ready yet. Please bear with us for few days.");
 }
 
-function ajaxCall(baseurl, type, dataObject){
+function ajaxCall(baseurl, type, dataObject) {
     var url;
     if (type == "add" || type == "add_array") {
         url = baseurl + "/element/add";
     } else if (type == "delete") {
         url = baseurl + "/element/delete";
-    } else if(type == "update"){
+    } else if (type == "update") {
         url = baseurl + "/update";
-    } else if(type == "replace"){
+    } else if (type == "replace") {
         url = baseurl + "/replace";
-    } else if(type == "primary"){
+    } else if (type == "primary") {
         url = baseurl + "/primary/update";
     }
-	var success = false;
-	$.ajax({
-		method: "PUT",
-		url: url,
-		async: false,
-		data: JSON.stringify(dataObject),
-		contentType: 'application/json; charset=UTF-8'
-	}).success(function (data) {
-		if (data == 0) {
+    var success = false;
+    $.ajax({
+        method: "PUT",
+        url: url,
+        async: false,
+        data: JSON.stringify(dataObject),
+        contentType: 'application/json; charset=UTF-8'
+    }).success(function (data) {
+        if (data == 0) {
             success = true;
         }
         if (data && data > 0) {
@@ -119,12 +119,12 @@ function ajaxCall(baseurl, type, dataObject){
                 notifySuccess("Added, Woo hoo!");
             } else if (type == "delete") {
                 notifySuccess("Deleted, Woo hoo!");
-            } else if(type == "update" || type == "replace" || type == "primary"){
+            } else if (type == "update" || type == "replace" || type == "primary") {
                 notifySuccess("Updated, Woo hoo!");
             }
         }
-	}).error(function (e) {
-		notifyResponseError(e);
-	});
-	return success;
+    }).error(function (e) {
+        notifyResponseError(e);
+    });
+    return success;
 }

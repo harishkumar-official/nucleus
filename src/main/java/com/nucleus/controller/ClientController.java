@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
 import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
@@ -17,13 +16,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-
 import com.nucleus.service.DataService;
 import com.nucleus.transientmodel.DeleteRequest;
 import com.nucleus.transientmodel.PrimaryFieldsRequest;
 import com.nucleus.transientmodel.SetDefaultRequest;
 import com.nucleus.transientmodel.UpdateRequest;
-
 import io.swagger.annotations.Api;
 
 @RestController

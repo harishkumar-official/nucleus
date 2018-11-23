@@ -7,11 +7,11 @@ public class NucleusException extends RuntimeException {
   public NucleusException(String message) {
     super(message);
   }
-  
+
   public NucleusException(Exception ex) {
     super(ex);
   }
-  
+
   public NucleusException(String message, Exception ex) {
     super(message, ex);
   }

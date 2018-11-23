@@ -7,11 +7,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nucleus.constants.Fields;
 import com.nucleus.database.CollectionName;
@@ -202,7 +200,7 @@ public class MetadataService {
     }
     return fields;
   }
-  
+
   private Set<String> includeGlobalFieldsName(Entity entity, Metadata meta) {
     Set<String> fields = new HashSet<>();
     if (entity.getFieldNameSet() != null) {
@@ -400,7 +398,7 @@ public class MetadataService {
     List<AssociationUpdates> associationUpdates = new ArrayList<AssociationUpdates>();
     Map<String, Object> updatesToSet = new HashMap<String, Object>();
     List<Document> arrayFilters = new ArrayList<Document>();
-    
+
     List<Field> fields = includeGlobalFields(entity, meta);
     Set<String> fieldNameSet = includeGlobalFieldsName(entity, meta);
 

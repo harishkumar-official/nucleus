@@ -668,7 +668,7 @@ function updateUI(newRow, name) {
 		var tableDiv = $('.FieldTable:visible');
 		var idAttr = tableDiv.attr('id');
 		var fieldSerial = newRow.find('.serial .serialspan').text();
-		if(idAttr == "global_fields"){
+		if (idAttr == "global_fields") {
 			$('.explorer .global_fields ul:first').append(li);
 			li.attr("name", "global_fields-" + fieldSerial);
 			li.append(displayName);
@@ -731,7 +731,7 @@ function populateButtons() {
 	populateAddButton("Field", $('.FieldTableRef table'));
 }
 
-function highlightElem(elem){
+function highlightElem(elem) {
 	explorerDivRoot.find("a, .global_fields_label, .entities_label, .type_definitions_label").css("font-weight", "");
 	$(elem).css("font-weight", "bold");
 }

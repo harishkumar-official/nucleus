@@ -1,12 +1,14 @@
 <html>
+
 <head>
-<script src="../../jquery.min.js"></script>
-<script src="../../jquery-1.12.4.js"></script>
-<script src="../../jquery-ui.js"></script>
+	<script src="../../jquery.min.js"></script>
+	<script src="../../jquery-1.12.4.js"></script>
+	<script src="../../jquery-ui.js"></script>
 </head>
+
 <body>
 
-<div class="main">
+	<div class="main">
 		<h4>Update Json Client</h4>
 		<form action="#" th:action="@{/client/{cln}/json/update(cln=${client})}" method="post">
 			<p>Id: <input type="text" name="id" /></p>
@@ -16,11 +18,12 @@
 			<p>Doc Json: <input type="text" name="doc" /></p>
 			<input type="submit" value="Update"/>
 		</form>
-</div>
+	</div>
 
 </body>
 <script src="../../metascript.js"></script>
 <script type="text/javascript" th:inline="javascript">
 
 </script>
+
 </html>

@@ -4,7 +4,6 @@ package com.nucleus.controller;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,11 +14,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-
 import com.nucleus.service.DataService;
 import com.nucleus.transientmodel.JsonRequest;
 import com.nucleus.transientmodel.JsonUpdateRequest;
-
 import io.swagger.annotations.Api;
 
 @RestController

@@ -6,11 +6,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-
 import org.bson.conversions.Bson;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import com.mongodb.client.model.Filters;
 import com.nucleus.constants.Fields;
 import com.nucleus.database.CollectionName;
@@ -44,8 +42,7 @@ public class AssociationService {
       for (Entry<List<String>, String> e : manyToManyRefEntities.entrySet()) {
         List<String> associatedField = e.getKey();
         String associatedEntityName = e.getValue();
-        updateWithManyToManyEntity(responseIdMap, responseEntityName, associatedField, associatedEntityName,
-            meta);
+        updateWithManyToManyEntity(responseIdMap, responseEntityName, associatedField, associatedEntityName, meta);
       }
     }
 
