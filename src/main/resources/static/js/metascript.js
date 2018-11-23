@@ -668,16 +668,22 @@ function updateUI(newRow, name) {
 		var tableDiv = $('.FieldTable:visible');
 		var idAttr = tableDiv.attr('id');
 		var fieldSerial = newRow.find('.serial .serialspan').text();
-		$('.explorer li[name=' + idAttr + ']').children('ul').append(li);
-		var newId = idAttr + "-fields-" + fieldSerial;
-		if (type == "object" || subtype == "object") {
-			li.attr("name", newId);
-			li.append("<a href='#'>" + displayName + "</a>");
-			var innerFieldstableDiv = populateFields([], li, newId);
-			assignExplorerLinkClick(li.children('a'), innerFieldstableDiv);
-		} else {
-			li.attr("name", newId);
+		if(idAttr == "global_fields"){
+			$('.explorer .global_fields ul:first').append(li);
+			li.attr("name", "global_fields-" + fieldSerial);
 			li.append(displayName);
+		} else {
+			$('.explorer li[name=' + idAttr + ']').children('ul').append(li);
+			var newId = idAttr + "-fields-" + fieldSerial;
+			if (type == "object" || subtype == "object") {
+				li.attr("name", newId);
+				li.append("<a href='#'>" + displayName + "</a>");
+				var innerFieldstableDiv = populateFields([], li, newId);
+				assignExplorerLinkClick(li.children('a'), innerFieldstableDiv);
+			} else {
+				li.attr("name", newId);
+				li.append(displayName);
+			}
 		}
 	} else if (name == "Entity") {
 		var entityname = newRow.children('.entityname').text();

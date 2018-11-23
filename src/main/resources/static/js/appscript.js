@@ -608,6 +608,7 @@ function populateMetadata() {
 
     // populate primary fields
     populatePrimaryFields(entityMap[entity].fields, mainDiv);
+    primaryFields = [];
     entityMap[entity].fields.forEach(field => {
         if (field.fieldlevel == "primary") {
             primaryFields.push(field);
