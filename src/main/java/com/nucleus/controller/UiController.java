@@ -47,6 +47,7 @@ public class UiController {
   }
 
   private ModelAndView redirect(ModelMap model, String client, boolean created) {
+    model.put("client", client);
     List<Map<String, Object>> metadatas = dataService.getMetaData(client, null);
     if (metadatas.isEmpty()) {
       return new ModelAndView("redirect:/ui/simpledata", model);
@@ -63,8 +64,6 @@ public class UiController {
    */
   @RequestMapping(value = "/login", method = RequestMethod.POST)
   public ModelAndView login(ModelMap model, @RequestParam String client) {
-    model.put("client", client);
-
     if (StringUtils.isEmpty(client)) {
       model.put("error", "Sorry, fields are missing.");
     } else {
@@ -85,8 +84,6 @@ public class UiController {
   @RequestMapping(value = "/signup", method = RequestMethod.POST)
   public ModelAndView create(ModelMap model, @RequestParam String client, @RequestParam boolean metadata,
       @RequestParam String localization, @RequestParam(required = false) String environment) {
-    model.put("client", client);
-
     if (StringUtils.isEmpty(client) || StringUtils.isEmpty(localization)) {
       model.put("error", "Sorry, fields are missing.");
     } else if (dataService.clientExists(client)) {
@@ -150,45 +147,27 @@ public class UiController {
   }
 
   /**
-   * Returns meta-client meta-data.
-   */
-  @ResponseBody
-  @RequestMapping(value = "/metadata/get", method = RequestMethod.GET)
-  public Map<String, Object> metadata(@RequestParam String client) {
-    List<Map<String, Object>> data = dataService.getMetaData(client, null);
-    List<String> localizations = new ArrayList<>();
-
-    return mapMetaData(data, localizations);
-  }
-
-  /**
    * Returns meta-client app-data html.
    */
   @RequestMapping(value = "/appdata", method = RequestMethod.GET)
-  public String appdata(ModelMap model, @RequestParam String client) {
+  public ModelAndView appdata(ModelMap model, @RequestParam String client) {
     Metadata metadata = dataService.getMetadataObject(client);
     if (metadata == null) {
       throw new NucleusException("Invalid Client");
     }
     String entity = metadata.getEntities().get(0).getEntityName();
 
-    List<Map<String, Object>> data = dataService.getDocList(client, entity, metadata);
+    try {
+      List<Map<String, Object>> data = dataService.getDocList(client, entity, metadata);
+      model.put("metadata", metadata);
+      model.put("appdata", data);
+      model.put("entity", entity);
+      model.put("client", client);
+    } catch (Exception e) {
+      return redirect(model, client, true);
+    }
 
-    model.put("metadata", metadata);
-    model.put("appdata", data);
-    model.put("entity", entity);
-    model.put("client", client);
-    return "appdata";
-  }
-
-  /**
-   * Returns meta-client app data.
-   */
-  @ResponseBody
-  @RequestMapping(value = "/appdata/get", method = RequestMethod.GET)
-  public List<Map<String, Object>> appdata(@RequestParam String client, @RequestParam String entity,
-      @RequestParam String queryFields) {
-    return dataService.getEntities(client, entity, queryFields, null, false);
+    return new ModelAndView("appdata");
   }
 
   /**
@@ -201,7 +180,7 @@ public class UiController {
     Set<String> environments = new HashSet<>();
     Set<String> localizations = new HashSet<>();
 
-    model.put("simpledata", mapData(data, environments, localizations));
+    model.put("simpledata", mapSimpleData(data, environments, localizations));
     model.put("client", client);
     model.put("environments", environments);
     model.put("localizations", localizations);
@@ -209,7 +188,7 @@ public class UiController {
   }
 
   @SuppressWarnings("unchecked")
-  private Map<String, Object> mapData(List<Map<String, Object>> data, Set<String> environments,
+  private Map<String, Object> mapSimpleData(List<Map<String, Object>> data, Set<String> environments,
       Set<String> localizations) {
     Map<String, Object> envLocDataMap = new HashMap<>();
     data.forEach(d -> {

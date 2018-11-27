@@ -2,8 +2,9 @@ package com.nucleus.logger;
 
 import org.apache.logging.log4j.LogManager;
 
-@SuppressWarnings("rawtypes")
 public class NucleusLogger {
+
+  private static final String LOGGER_NAME = "TraceLogger";
 
   private NucleusLogger() {}
 
@@ -12,27 +13,27 @@ public class NucleusLogger {
   }
 
   public static void warn(String msg, Class callingClass) {
-    LogManager.getLogger(callingClass).warn(getMsg(callingClass, msg));
+    LogManager.getLogger(LOGGER_NAME).warn(getMsg(callingClass, msg));
   }
 
   public static void info(String msg, Class callingClass) {
-    LogManager.getLogger(callingClass).info(getMsg(callingClass, msg));
+    LogManager.getLogger(LOGGER_NAME).info(getMsg(callingClass, msg));
   }
 
   public static void error(String msg, Class callingClass) {
-    LogManager.getLogger(callingClass).error(getMsg(callingClass, msg));
+    LogManager.getLogger(LOGGER_NAME).error(getMsg(callingClass, msg));
   }
 
   public static void debug(String msg, Class callingClass) {
-    LogManager.getLogger(callingClass).debug(getMsg(callingClass, msg));
+    LogManager.getLogger(LOGGER_NAME).debug(getMsg(callingClass, msg));
   }
 
   public static void trace(String msg, Class callingClass) {
-    LogManager.getLogger(callingClass).trace(getMsg(callingClass, msg));
+    LogManager.getLogger(LOGGER_NAME).trace(getMsg(callingClass, msg));
   }
 
   public static void fatal(String msg, Class callingClass) {
-    LogManager.getLogger(callingClass).fatal(getMsg(callingClass, msg));
+    LogManager.getLogger(LOGGER_NAME).fatal(getMsg(callingClass, msg));
   }
 
 }

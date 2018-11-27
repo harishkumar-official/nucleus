@@ -1,0 +1,2 @@
+#Mongo
+mongohost: dev:dev@localhost:27017/nucleus

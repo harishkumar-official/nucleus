@@ -81,9 +81,10 @@ public class ClientController {
    */
   @RequestMapping(value = "/{client}/entity/{entity}/get", method = RequestMethod.GET, produces = "application/json")
   public List<Map<String, Object>> get(@PathVariable String client, @PathVariable String entity,
-      @RequestParam String query, @RequestParam(required = false, value = "return_fields") List<String> returnFields) {
+      @RequestParam String query, @RequestParam(required = false, value = "return_fields") List<String> returnFields,
+      @RequestParam(required = false, value = "include_inner_enitites") boolean withAssData) {
 
-    List<Map<String, Object>> result = dataService.getEntities(client, entity, query, returnFields, true);
+    List<Map<String, Object>> result = dataService.getEntities(client, entity, query, returnFields, withAssData);
 
     if (!StringUtils.isEmpty(returnFields)) {
       for (Map<String, Object> partner : result) {

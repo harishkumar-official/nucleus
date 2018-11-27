@@ -70,22 +70,21 @@ function updateMetadata(type, updatesMap, maxSerial) {
 	return ajaxCall(metaBaseURL, type, dataObject);
 }
 
-function getMetadata() {
-	var success = false;
+function getMetadata(localilzation) {
+	var response = null;
 	$.ajax({
 		method: "GET",
-		url: "/ui/metadata/get?client=" + client,
+		url: metaBaseURL + "/get?localization=" + localilzation,
 		async: false,
 		contentType: 'application/json; charset=UTF-8'
 	}).success(function (data) {
 		if (data) {
-			success = true;
-			metadata = data;
+			response = data[0];
 		}
 	}).error(function (e) {
 		notifyResponseError(e);
 	});
-	return success;
+	return response;
 }
 
 function hideAll() {
@@ -437,11 +436,16 @@ function checkFieldExists(elem, tableTbody) {
 			$(elem).children().focus();
 			return false;
 		}
+		if (fieldnamevalue.includes("-")) {
+			$(elem).append("<span style='color:red'><br>Hyphens ain't allowed</span>");
+			$(elem).children().focus();
+			return false;
+		}
 
 		// checking uniqueness
 		var elems = tableTbody.find("td." + fieldName);
-		$.each(elems, function (index, elem) {
-			var currentname = $(elem).text();
+		$.each(elems, function (index, e) {
+			var currentname = $(e).text();
 			if (fieldnamevalue == currentname) {
 				$(elem).append("<span style='color:red'><br>Duplicate Field Name</span>");
 				$(elem).children().focus();
@@ -562,11 +566,13 @@ function populateAddButton(name, tableRef) {
 			id = "type_definitions";
 		}
 
+		var newRow;
 		if (id == "global_fields") {
-			tableRef = $('.GlobalFieldTableRef table');
+			newRow = $('.GlobalFieldTableRef table').find('tbody tr').clone();
+		} else {
+			newRow = tableRef.find('tbody tr').clone();
 		}
-
-		var newRow = tableRef.find('tbody tr').clone();
+		
 		var errorFlag = false;
 
 		var updateObject = new Object();
@@ -718,9 +724,6 @@ function updateTypeSelect(name, displayName) {
 }
 
 function populateButtons() {
-	// Add Global Field Button
-	populateAddButton("Field", $('.GlobalFieldTableRef table'));
-
 	// Add Entity Button
 	populateAddButton("Entity", $('.AddEntity table'));
 

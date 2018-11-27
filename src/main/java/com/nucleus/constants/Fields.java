@@ -2,6 +2,7 @@ package com.nucleus.constants;
 
 public class Fields {
 
+  public static final String MONGO_ID = "_id";
   public static final String ID = "id";
   public static final String CLIENT = "client";
   public static final String LOCALIZATION = "localization";

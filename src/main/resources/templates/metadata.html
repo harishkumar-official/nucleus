@@ -292,9 +292,9 @@
 			var localization = $(".toolbar .localization select").val();
 
 			// refresh metadata
-			getMetadata();
-
-			currentMetadata = metadata[localization];
+			currentMetadata = getMetadata(localization);
+			
+			metadata[localization] = currentMetadata;
 			loadMetadata(currentMetadata);
 		}
 	});

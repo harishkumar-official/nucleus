@@ -10,11 +10,11 @@ function getAppdata() {
     primaryFields.forEach(field => {
         returnFields = returnFields + field.fieldname + ",";
     });
-    returnFields = returnFields.substr(0, returnFields.length - 1)
+    returnFields = returnFields + "id";
 
     $.ajax({
         method: "GET",
-        url: "/ui/appdata/get?client=" + client + "&entity=" + entity + "&queryFields=" + query + "&return_fields=" + returnFields,
+        url: clientBaseURL + "/entity/" + entity + "/get?queryFields=" + query + "&return_fields=" + returnFields,
         async: false,
         contentType: 'application/json; charset=UTF-8'
     }).success(function (data) {
@@ -32,7 +32,7 @@ function getDocdata(id) {
     var docData = null;
     $.ajax({
         method: "GET",
-        url: "/ui/appdata/get?client=" + client + "&entity=" + entity + "&queryFields=" + query,
+        url: clientBaseURL + "/entity/" + entity + "/get?queryFields=" + query,
         async: false,
         contentType: 'application/json; charset=UTF-8'
     }).success(function (data) {
@@ -174,6 +174,9 @@ function assignEdit(div, elem) {
     edit.click(function () {
         edit.hide();
         save.show();
+        if (!fieldtype || fieldtype == "") {
+            fieldtype = div.siblings(".subtype").text().trim();
+        }
         if (fieldtype == "date") {
             var input = div.children("input");
             input.datetimepicker("option", "disabled", false);
@@ -188,7 +191,7 @@ function assignEdit(div, elem) {
         var fullFieldName = div.attr("id");
         var fieldValue = elem.val();
         if (!fieldtype || fieldtype == "") {
-            fieldtype = div.parent().children(".subtype").text().trim();
+            fieldtype = div.siblings(".subtype").text().trim();
         }
         var subtype = div.children(".subtype").text().trim();
         fieldValue = cast(fullFieldName, fieldValue, fieldtype, subtype);
