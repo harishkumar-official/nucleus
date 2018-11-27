@@ -27,6 +27,9 @@ import com.nucleus.transientmodel.AssociationUpdates;
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class DataService {
 
+  private static final String SEMI_COLON = ":";
+  private static final String COMMA = ",";
+
   private AmazonS3Adapter amazonS3Adapter;
   private DatabaseAdapter databaseAdapter;
   private MetadataService metadataService;
@@ -78,9 +81,9 @@ public class DataService {
 
     String id = null;
     Map<String, Object> keyValueMap = new HashMap<>();
-    String[] queryFields = query.split(",");
+    String[] queryFields = query.split(COMMA);
     for (String field : queryFields) {
-      String[] keyValue = field.split(":");
+      String[] keyValue = field.split(SEMI_COLON);
       if (keyValue.length < 2) {
         continue;
       }
@@ -151,13 +154,8 @@ public class DataService {
 
   public boolean clientExists(String client) {
     Bson query = QueryService.getQuery(client);
-    if (databaseAdapter.exists(query, CollectionName.metadata.name())) {
-      return true;
-    }
-    if (databaseAdapter.exists(query, Fields.SIMPLE_CLIENT_DEFAULT_ENTITY)) {
-      return true;
-    }
-    return false;
+    return databaseAdapter.exists(query, CollectionName.metadata.name())
+        || databaseAdapter.exists(query, Fields.SIMPLE_CLIENT_DEFAULT_ENTITY);
   }
 
   /*-----Meta-Data APIs-----*/
@@ -244,21 +242,30 @@ public class DataService {
 
   public List<Map<String, Object>> getDocList(String client, String entityName, Metadata metadata) {
     StringBuilder queryFields = new StringBuilder();
-    metadata.getGlobalFields().forEach(gf -> {
-      Set<String> values = gf.getValues();
-      if (values.size() > 0) {
-        queryFields.append(gf.getFieldName()).append(':').append(values.iterator().next()).append(',');
-      }
-    });
-    queryFields.setLength(queryFields.length() - 1);
+    if (metadata.getGlobalFields() == null || metadata.getGlobalFields().isEmpty()) {
+      throw new NucleusException("Please define your global fields first.");
+    } else {
+      metadata.getGlobalFields().forEach(gf -> {
+        Set<String> values = gf.getValues();
+        if (values.size() > 0) {
+          queryFields.append(gf.getFieldName()).append(':').append(values.iterator().next()).append(',');
+        }
+      });
+      queryFields.setLength(queryFields.length() - 1);
+    }
 
     Entity entity = metadata.getEntity(entityName);
     List<String> returnFields = new ArrayList<>();
-    entity.getFields().forEach(field -> {
-      if (field.getFieldLevel() != null && field.getFieldLevel().equals(FieldLevel.primary)) {
-        returnFields.add(field.getFieldName());
-      }
-    });
+    if (entity.getFields() == null || entity.getFields().isEmpty()) {
+      throw new NucleusException("Please define your entity fields first.");
+    } else {
+      entity.getFields().forEach(field -> {
+        if (field.getFieldLevel() != null && field.getFieldLevel().equals(FieldLevel.primary)) {
+          returnFields.add(field.getFieldName());
+        }
+      });
+    }
+    returnFields.add(Fields.MONGO_ID);
 
     return getEntities(client, entityName, queryFields.toString(), returnFields, false);
   }
@@ -476,7 +483,7 @@ public class DataService {
     Map<String, Object> updatesToSet = (Map<String, Object>) data.get(1);
     List<Document> arrayFilters = (List<Document>) data.get(2);
 
-    Bson query = QueryService.getQuery(client, Arrays.asList(ids.split(",")));
+    Bson query = QueryService.getQuery(client, Arrays.asList(ids.split(COMMA)));
     Long success = databaseAdapter.update(query, updatesToSet, arrayFilters, getCollectionName(client, entity));
     if (success == 1) {
       return fileUrl;
@@ -493,7 +500,7 @@ public class DataService {
     Map<String, Object> updates = new HashMap<>();
     updates.put(fieldname, fileUrl);
 
-    Bson query = QueryService.getQuery(ids.split(","));
+    Bson query = QueryService.getQuery(ids.split(COMMA));
     Long success = databaseAdapter.update(query, updates, Fields.SIMPLE_CLIENT_DEFAULT_ENTITY);
     if (success == 1) {
       return fileUrl;

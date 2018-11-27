@@ -27,6 +27,7 @@ import com.nucleus.transientmodel.AssociationUpdates;
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class MetadataService {
 
+  private static final String DOT = "\\.";
   private static ObjectMapper mapper = new ObjectMapper();
 
   private DatabaseAdapter database;
@@ -56,6 +57,16 @@ public class MetadataService {
     return meta;
   }
 
+  private void validateAllowedName(String name) {
+    if (CHAR_LIST.contains(name.charAt(0))) {
+      throw new NucleusException("Name shouldn't start with a number.");
+    } else if (name.contains(" ")) {
+      throw new NucleusException("Name shouldn't contain a space.");
+    } else if (name.contains("-")) {
+      throw new NucleusException("Name shouldn't contain a hyphen. Rather use _underscore");
+    }
+  }
+
   private void validateEntity(Metadata meta, Map<String, Object> newMeta) {
     if (meta != null) {
       int entitySize = meta.getEntities().size();
@@ -79,6 +90,7 @@ public class MetadataService {
             existingEntity = meta.getEntities().stream().filter(en -> en.getEntityName().equals(entityName)).findFirst()
                 .orElse(null);
             if (existingEntity == null) {
+              validateAllowedName(entityName);
               newEntity.put(Fields.SERIAL, ++entitySize);
             } else {
               throw new NucleusException("Entity '" + entityName + "' already exists.");
@@ -112,6 +124,7 @@ public class MetadataService {
             existingType = meta.getTypeDefinitions().stream().filter(ty -> ty.getTypeName().equals(typeName))
                 .findFirst().orElse(null);
             if (existingType == null) {
+              validateAllowedName(typeName);
               newType.put(Fields.SERIAL, ++typeSize);
             } else {
               throw new NucleusException("Type '" + typeName + "' already exists.");
@@ -137,6 +150,7 @@ public class MetadataService {
           existingSubField =
               existingSubFields.stream().filter(e -> e.getFieldName().equals(fieldName)).findFirst().orElse(null);
           if (existingSubField == null) {
+            validateAllowedName(fieldName);
             int serial = ++fieldsSize;
             newSubField.put(Fields.SERIAL, serial);
           }
@@ -443,7 +457,7 @@ public class MetadataService {
   }
 
   private String convertFieldToDbField(String fullFieldName, List<Document> arrayFilters, WrapInt index) {
-    String[] fields = fullFieldName.split("\\.");
+    String[] fields = fullFieldName.split(DOT);
     StringBuilder fullFieldToSet = new StringBuilder();
     for (int j = 0; j < fields.length; j++) {
       String curr = fields[j];
@@ -512,7 +526,7 @@ public class MetadataService {
 
   private Object getVerifiedValue(String field, Object doc) {
     Object verifiedValue = doc;
-    for (String key : field.split("\\.")) {
+    for (String key : field.split(DOT)) {
       if (CHAR_LIST.contains(key.charAt(0))) {
         verifiedValue = getElement(Integer.parseInt(key), (List) verifiedValue);
       } else {
