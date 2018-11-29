@@ -111,7 +111,7 @@ function ajaxCall(baseurl, type, dataObject) {
         contentType: 'application/json; charset=UTF-8'
     }).success(function (data) {
         if (data == 0) {
-            success = true;
+            success = false;
         }
         if (data && data > 0) {
             success = true;

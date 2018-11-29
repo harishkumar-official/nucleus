@@ -21,7 +21,9 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.DeleteManyModel;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.InsertOneModel;
 import com.mongodb.client.model.Projections;
 import com.mongodb.client.model.UpdateOneModel;
 import com.mongodb.client.model.UpdateOptions;
@@ -94,7 +96,8 @@ public class DatabaseAdapter {
   /**
    * Insert the doc with association data.
    */
-  public String create(Document doc, String collectionName, List<AssociationUpdates> associationUpdates) {
+  public String create(Document doc, String collectionName, List<AssociationUpdates> associationUpdates,
+      String client) {
     // Create entity
     getCollection(collectionName).insertOne(doc);
     ObjectId objectId = (ObjectId) doc.get(_ID);
@@ -104,19 +107,15 @@ public class DatabaseAdapter {
     String id = objectId.toString();
 
     // Update associations
+    Long modifiedCount = 0L;
     if (associationUpdates != null && !associationUpdates.isEmpty()) {
-      List<WriteModel<Document>> requests = new ArrayList<WriteModel<Document>>();
-      for (AssociationUpdates update : associationUpdates) {
-        WriteModel<Document> req =
-            getUpdateAssociationModel(collectionName, id, update.getRefEntityName(), update.getRefEntityIds());
-        requests.add(req);
-      }
-      BulkWriteResult result = getCollection(CollectionName.association.name()).bulkWrite(requests);
-      NucleusLogger.info("Updated " + result.getModifiedCount() + " association docs.", this.getClass());
-      if (result.getModifiedCount() == 0 && result.getUpserts().size() == 0) {
-        throw new NucleusException("Couldn't update the association data. Please try again.");
+      Bson query = Filters.eq(new ObjectId(id));
+      modifiedCount = updateAssociations(query, collectionName, associationUpdates, client).longValue();
+      if (modifiedCount == 0) {
+        NucleusLogger.warn("Association update failed.", this.getClass());
       }
     }
+
     return id;
   }
 
@@ -134,20 +133,15 @@ public class DatabaseAdapter {
   }
 
   public Long update(Bson query, Map<String, Object> updates, String collectionName) {
-    return update(query, updates, collectionName, null);
-  }
-
-  public Long update(Bson query, Map<String, Object> updates, String collectionName,
-      List<AssociationUpdates> associationUpdates) {
-    return update(query, updates, null, collectionName, associationUpdates);
+    return update(query, updates, null, collectionName);
   }
 
   public Long update(Bson query, Map<String, Object> updates, List<Document> arrayFilters, String collectionName) {
-    return update(query, updates, arrayFilters, collectionName, null);
+    return update(query, updates, arrayFilters, collectionName, null, null);
   }
 
   public Long update(Bson query, Map<String, Object> updates, List<Document> arrayFilters, String collectionName,
-      List<AssociationUpdates> associationUpdates) {
+      List<AssociationUpdates> associationUpdates, String client) {
     List<Bson> updatesBson = new ArrayList<>();
     updates.forEach((key, value) -> updatesBson.add(Updates.set(key, value)));
 
@@ -158,33 +152,79 @@ public class DatabaseAdapter {
     }
 
     // Update entity
-    UpdateResult result = getCollection(collectionName).updateMany(query, Updates.combine(updatesBson), option);
+    UpdateResult result = null;
+    if (!updatesBson.isEmpty()) {
+      result = getCollection(collectionName).updateMany(query, Updates.combine(updatesBson), option);;
+    }
 
     // Update associations
+    Long modifiedCount = 0L;
     if (associationUpdates != null && !associationUpdates.isEmpty()) {
-      Long modifiedCount = updateAssociations(query, collectionName, associationUpdates).longValue();
-      if (modifiedCount != result.getModifiedCount()) {
-        NucleusLogger.warn("Entity and association update modified different number of docs.", this.getClass());
+      modifiedCount = updateAssociations(query, collectionName, associationUpdates, client).longValue();
+      if (modifiedCount == 0) {
+        NucleusLogger.warn("Association update failed.", this.getClass());
       }
     }
-    return result.getModifiedCount();
+    return result == null ? modifiedCount : result.getModifiedCount();
   }
 
-  private Integer updateAssociations(Bson query, String collectionName, List<AssociationUpdates> associationUpdates) {
+  private Integer updateAssociations(Bson query, String collectionName, List<AssociationUpdates> associationUpdates,
+      String client) {
     FindIterable<Document> ids = getCollection(collectionName).find(query).projection(Projections.include(_ID));
 
     List<WriteModel<Document>> requests = new ArrayList<WriteModel<Document>>();
     for (Document document : ids) {
       String id = document.get(_ID).toString();
       for (AssociationUpdates update : associationUpdates) {
-        WriteModel<Document> req =
-            getUpdateAssociationModel(collectionName, id, update.getRefEntityName(), update.getRefEntityIds());
-        requests.add(req);
+        updateWriteRequests(requests, update, id, client);
       }
     }
     BulkWriteResult result = getCollection(CollectionName.association.name()).bulkWrite(requests);
     NucleusLogger.info("Updated " + result.getModifiedCount() + " association docs.", this.getClass());
-    return result.getModifiedCount();
+    return (result.getModifiedCount() > 0) ? result.getModifiedCount() : result.getInsertedCount();
+  }
+
+  private void updateWriteRequests(List<WriteModel<Document>> requests, AssociationUpdates associationUpdate,
+      String parentEntityDocId, String client) {
+    String parentEntityName = associationUpdate.getParentEntityName();
+    String refEntityName = associationUpdate.getRefEntityName();
+
+    for (Map<String, Object> refEntityIdsMap : associationUpdate.getRefEntityIdsMapList()) {
+      String newRefEntityDocId = (String) refEntityIdsMap.get(Fields.VALUE);
+
+      if (refEntityIdsMap.containsKey(Fields.PREVIOUS_VALUE)) {
+        String prevRefEntityDocId = (String) refEntityIdsMap.get(Fields.PREVIOUS_VALUE);
+        Bson update = Updates.set(Fields.ASS_MAPPING, Arrays.asList(newRefEntityDocId, parentEntityDocId));
+        Bson query =
+            Filters.and(Filters.eq(Fields.ASS_NAME, parentEntityName), Filters.eq(Fields.ASS_NAME, refEntityName),
+                Filters.eq(Fields.ASS_MAPPING, parentEntityDocId), Filters.eq(Fields.ASS_MAPPING, prevRefEntityDocId));
+        requests.add(new UpdateOneModel<Document>(query, update));
+      } else {
+        Document document = new Document();
+        document.append(Fields.CLIENT, client);
+        document.append(Fields.ASS_NAME, Arrays.asList(parentEntityName, refEntityName));
+        document.append(Fields.ASS_MAPPING, Arrays.asList(newRefEntityDocId, parentEntityDocId));
+        requests.add(new InsertOneModel<>(document));
+      }
+    }
+  }
+
+  public Integer deleteAssociations(List<String> parentIds, List<AssociationUpdates> associationUpdates) {
+    List<WriteModel<Document>> requests = new ArrayList<WriteModel<Document>>();
+    for (AssociationUpdates associationUpdate : associationUpdates) {
+      String parentEntityName = associationUpdate.getParentEntityName();
+      String refEntityName = associationUpdate.getRefEntityName();
+
+      for (Map<String, Object> refEntityIdsMap : associationUpdate.getRefEntityIdsMapList()) {
+        String refEntityDocId = (String) refEntityIdsMap.get(Fields.VALUE);
+        Bson query =
+            Filters.and(Filters.eq(Fields.ASS_NAME, refEntityName), Filters.eq(Fields.ASS_NAME, parentEntityName),
+                Filters.eq(Fields.ASS_MAPPING, refEntityDocId), Filters.in(Fields.ASS_MAPPING, parentIds));
+        requests.add(new DeleteManyModel<>(query));
+      }
+    }
+    BulkWriteResult result = getCollection(CollectionName.association.name()).bulkWrite(requests);
+    return result.getDeletedCount();
   }
 
 
@@ -325,31 +365,6 @@ public class DatabaseAdapter {
 
 
   /*-----Helpers-----*/
-
-  public UpdateOneModel<Document> getUpdateAssociationModel(String entityName, String entityId, String refEntityName,
-      List<String> refEntityIds) {
-    List<Document> idMappings = new ArrayList<Document>();
-    if (refEntityIds instanceof List) {
-      for (String id : refEntityIds) {
-        Document idMapping = new Document();
-        idMapping.append(entityName, entityId);
-        idMapping.append(refEntityName, id);
-        idMappings.add(idMapping);
-      }
-    } else {
-      Document idMapping = new Document();
-      idMapping.append(entityName, entityId);
-      idMapping.append(refEntityName, refEntityIds);
-      idMappings.add(idMapping);
-    }
-    Bson update = Updates.addEachToSet(Fields.ASS_MAPPING, idMappings);
-    Bson query = Filters.eq(Fields.ASS_NAME, Arrays.asList(entityName, refEntityName));
-
-    UpdateOptions option = new UpdateOptions();
-    option.upsert(true);
-
-    return new UpdateOneModel<Document>(query, update, option);
-  }
 
   private void convertId(List<Map<String, Object>> docs) {
     for (Map<String, Object> doc : docs) {

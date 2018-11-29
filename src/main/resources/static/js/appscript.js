@@ -1,3 +1,34 @@
+function getEntityDocs(entityObject) {
+    var entitydata;
+    var query = "";
+    $.each(queryFields, function (key, value) {
+        query = query + key + ":" + value + ","
+    });
+    query = query.substr(0, query.length - 1)
+
+    var returnFields = "";
+    entityObject.fields.forEach(field => {
+        if (field.fieldlevel == "primary") {
+            returnFields = returnFields + field.fieldname + ",";
+        }
+    });
+    returnFields = returnFields + "id";
+
+    $.ajax({
+        method: "GET",
+        url: clientBaseURL + "/entity/" + entityObject.entityname + "/get?query=" + query + "&return_fields=" + returnFields,
+        async: false,
+        contentType: 'application/json; charset=UTF-8'
+    }).success(function (data) {
+        if (data) {
+            entitydata = data;
+        }
+    }).error(function (e) {
+        notifyResponseError(e);
+    });
+    return entitydata;
+}
+
 function getAppdata() {
     var appdata;
     var query = "";
@@ -14,7 +45,7 @@ function getAppdata() {
 
     $.ajax({
         method: "GET",
-        url: clientBaseURL + "/entity/" + entity + "/get?queryFields=" + query + "&return_fields=" + returnFields,
+        url: clientBaseURL + "/entity/" + entity + "/get?query=" + query + "&return_fields=" + returnFields,
         async: false,
         contentType: 'application/json; charset=UTF-8'
     }).success(function (data) {
@@ -32,7 +63,7 @@ function getDocdata(id) {
     var docData = null;
     $.ajax({
         method: "GET",
-        url: clientBaseURL + "/entity/" + entity + "/get?queryFields=" + query,
+        url: clientBaseURL + "/entity/" + entity + "/get?query=" + query + "&include_inner_enitites=true",
         async: false,
         contentType: 'application/json; charset=UTF-8'
     }).success(function (data) {
@@ -66,6 +97,16 @@ function createAppData(doc) {
         notifyResponseError(e);
     });
     return success;
+}
+
+function updateAssociation(fieldname, fieldvalue, previousValue) {
+    var updatesMap = new Object();
+    var dottedFieldName = fieldname.replace(/-/g, ".");
+    if (previousValue && previousValue != "") {
+        fieldvalue = fieldvalue + "," + previousValue;
+    }
+    updatesMap[dottedFieldName] = fieldvalue;
+    return update("update", updatesMap);
 }
 
 function addInAppData(fieldname, fieldvalue) {
@@ -163,12 +204,14 @@ function cast(fullFieldName, fieldValue, fieldtype, subtype) {
     return fieldValue;
 }
 
-function assignEdit(div, elem) {
+function assignEdit(div, elem, isEntityType) {
     var inputRef = $(".input");
     var edit = $(".edit").children(".edit").clone().show();
     var save = $(".edit").children(".save").clone().hide();
     var info = $(".edit").children(".info").clone().show();
     var fieldtype = div.children(".fieldtype").text().trim();
+
+    var previous;
 
     div.append(edit).append(save).append(info);
     edit.click(function () {
@@ -186,6 +229,9 @@ function assignEdit(div, elem) {
             elem.removeAttr("disabled");
             elem.focus();
         }
+        if (isEntityType == true) {
+            previous = elem.val();
+        }
     });
     save.click(function () {
         var fullFieldName = div.attr("id");
@@ -201,7 +247,19 @@ function assignEdit(div, elem) {
         }
         // call update API
         var response = false;
-        if (fieldtype == "file") {
+        if (isEntityType == true) {
+            var flag = false;
+            $.each($("#ten select[disabled]"), function () {
+                if (this.value == fieldValue) {
+                    notifyError("Duplicate value");
+                    flag = true;
+                    return false;
+                }
+            });
+            if (flag == false) {
+                response = updateAssociation(fullFieldName, fieldValue, previous);
+            }
+        } else if (fieldtype == "file") {
             var file = div.children("input")[0].files;
             response = upload(fullFieldName, file);
         } else {
@@ -263,16 +321,33 @@ function assignToggle(div, inputRef) {
     div.children(".field").hide();
 }
 
-function assignArrayElementRemove(removeSpan, arrayEntry) {
+function assignArrayElementRemove(removeSpan, arrayEntry, isEntityType) {
     removeSpan.click(function () {
         // call array element remove API
         var serial = parseInt($(this).siblings(".serial").text());
         var fieldname = $(this).parent().parent().attr("id");
-        var value = new Object();
-        value["serial"] = serial;
         var childs = $(this).parent().parent().children(".field");
+        var elem = $(this).siblings("select, input");
+        var elemValue = elem.val().trim();
+
+        var disabledAttr = elem.attr("disabled");
+        if (!disabledAttr) {
+            return false;
+        }
+
+        if (isEntityType && elemValue == "") {
+            shiftArrayElementsSerial(childs, serial);
+            arrayEntry.remove();
+            return true;
+        }
+
+        var fieldvalue = new Object();
+        fieldvalue["serial"] = serial;
+        if (isEntityType && elemValue != "") {
+            fieldvalue["value"] = elemValue;
+        }
         var arraySize = parseInt(childs.last().children(".serial").text().trim());
-        var response = deleteInAppData(fieldname, value, arraySize);
+        var response = deleteInAppData(fieldname, fieldvalue, arraySize);
         if (response) {
             shiftArrayElementsSerial(childs, serial);
             arrayEntry.remove();
@@ -294,8 +369,36 @@ function shiftArrayElementsSerial(childs, removedSerial) {
     });
 }
 
+function getEntityView(data) {
+    var str = "";
+    $.each(data, function (key, value) {
+        if (key != "id") {
+            str = str + key + "=" + value + ", ";
+        }
+    });
+    return str.substr(0, str.length - 2);
+}
+
+var entityDocSelectMap = new Object();
+function getEntityDocList(entityObject) {
+    if (entityDocSelectMap.hasOwnProperty(entityObject.entityname)) {
+        return entityDocSelectMap[entityObject.entityname].clone();
+    }
+    var entitydata = getEntityDocs(entityObject);
+
+    var select = $(".input .select").clone().removeClass("select");
+    var optionRef = select.children('option');
+    entitydata.forEach(elem => {
+        var option = optionRef.clone().val(elem.id).text(getEntityView(elem));
+        select.append(option);
+    });
+
+    entityDocSelectMap[entityObject.entityname] = select;
+    return select.clone();
+}
+
 var primaryTypes = ["string", "float", "double", "integer", "long"];
-function populateInput(i, div, inputRef, fieldId, fieldtype, subtype, enumValues, subFields) {
+function populateInput(i, div, inputRef, fieldId, fieldtype, subtype, enumValues, subFields, asstype) {
     var input;
     if (primaryTypes.indexOf(fieldtype) >= 0) {
         input = inputRef.children("input").clone();
@@ -332,7 +435,8 @@ function populateInput(i, div, inputRef, fieldId, fieldtype, subtype, enumValues
             serial = parseInt(serial) + 1;
 
             // call array add API and add just serial in the DB
-            if (addApiEnabled == true) {
+            var isEntityType = entityMap.hasOwnProperty(subtype);
+            if (addApiEnabled == true && !isEntityType) {
                 var addElem = new Object();
                 addElem["serial"] = serial;
                 var success = addInAppData(fieldId, addElem);
@@ -353,7 +457,7 @@ function populateInput(i, div, inputRef, fieldId, fieldtype, subtype, enumValues
 
             var newFieldId = fieldId + "-" + serial;
             newArrayEntry.attr("id", newFieldId);
-            if (subtype == "object" || typeDefMap.hasOwnProperty(subtype) || entityMap.hasOwnProperty(subtype)) {
+            if (subtype == "object" || typeDefMap.hasOwnProperty(subtype)) {
                 populateFields(subFields, newArrayEntry, newFieldId, i + 1, false);
                 serialSpan.after(removeSpan);
                 serialSpan.click(function () {
@@ -365,10 +469,10 @@ function populateInput(i, div, inputRef, fieldId, fieldtype, subtype, enumValues
                     }
                 });
             } else {
-                var entryInput = populateInput(i + 1, newArrayEntry, inputRef, newFieldId, subtype, null, enumValues, subFields);
+                var entryInput = populateInput(i + 1, newArrayEntry, inputRef, newFieldId, subtype, null, enumValues, subFields, null);
                 newArrayEntry.attr("id", newFieldId + "-" + "value"); // for non object array elements
                 newArrayEntry.append(entryInput);
-                assignEdit(newArrayEntry, entryInput);
+                assignEdit(newArrayEntry, entryInput, isEntityType);
                 newArrayEntry.append(removeSpan);
                 serialSpan.css("width", "170px");
                 removeSpan.css("margin-left", "175px");
@@ -376,7 +480,7 @@ function populateInput(i, div, inputRef, fieldId, fieldtype, subtype, enumValues
                 assignBackground(newArrayEntry, i);
             }
             div.append(newArrayEntry);
-            assignArrayElementRemove(removeSpan, newArrayEntry);
+            assignArrayElementRemove(removeSpan, newArrayEntry, isEntityType);
 
             assignToggle(div, inputRef);
             div.children(".field").show();
@@ -399,8 +503,12 @@ function populateInput(i, div, inputRef, fieldId, fieldtype, subtype, enumValues
             assignToggle(div, inputRef);
         }
     } else if (entityMap.hasOwnProperty(fieldtype)) {
-        // TODO: if entity association is supported
-        input = inputRef.children("input").clone();
+        if (asstype == "many_to_many") {
+            // sending fieldtype as array and subtype as fieldtype for entities
+            populateInput(i, div, inputRef, fieldId, "array", fieldtype, null, null, null)
+        } else {
+            input = getEntityDocList(entityMap[fieldtype]);
+        }
     }
     return input;
 }
@@ -443,15 +551,15 @@ function populateFields(fields, parentDiv, parentId, index, allowOnlyPrimary) {
             // populating field div
             var input;
             if (isPrimaryField == true) {
-                input = populateInput(i, div, inputRef, fieldId, fieldtype, null, field.values, null)
+                input = populateInput(i, div, inputRef, fieldId, fieldtype, null, field.values, null, null)
             } else {
-                input = populateInput(i, div, inputRef, fieldId, fieldtype, subtype, field.values, field.fields)
+                input = populateInput(i, div, inputRef, fieldId, fieldtype, subtype, field.values, field.fields, field.association_type)
             }
 
             if (input) {
                 div.append(input);
                 if (isPrimaryField == false) {
-                    assignEdit(div, input);
+                    assignEdit(div, input, false);
                 }
             }
             assignBackground(div, i);
@@ -477,22 +585,31 @@ function populateAppData(appdataJson, parentFieldName) {
         }
         var fieldtype = $("#" + fullFieldName).children(".fieldtype").text().trim();
         if (!fieldtype || fieldtype == "") {
-            fieldtype = $("#" + fullFieldName).parent().children(".subtype").text().trim();
+            fieldtype = $("#" + fullFieldName).siblings(".subtype").text().trim();
         }
 
         if (value instanceof Array) {
             $("#" + fullFieldName).children(".field").remove();
-            value.forEach(val => {
+            value.forEach((val, index) => {
                 var serial = val["serial"];
+                if (!serial) {
+                    serial = index + 1;
+                }
                 var fieldId = fullFieldName + "-" + serial;
 
                 //Create array element
                 $("#" + fullFieldName + " .add").click();
 
                 //Assign element value
-                populateAppData(val, fieldId);
-                $("#" + fieldId).children(".serial").click();
+                if (entityMap.hasOwnProperty(fieldtype)) {
+                    $("#" + fieldId + "-value").children("select,input").val(val.id);
+                } else {
+                    populateAppData(val, fieldId);
+                    $("#" + fieldId).children(".serial").click();
+                }
             });
+        } else if (entityMap.hasOwnProperty(fieldtype)) {
+            $("#" + fullFieldName).children("select,input").val(value.id);
         } else if (value instanceof Object) {
             populateAppData(value, fullFieldName);
         } else if (fieldtype == "file") {
@@ -625,7 +742,7 @@ function populateMetadata() {
     var inputRef = $(".input");
     primaryFields.forEach(field => {
         var label = $(labelRef).clone().text(field.displayname);
-        var input = populateInput(null, null, inputRef, null, field.type, null, field.values, null);
+        var input = populateInput(null, null, inputRef, null, field.type, null, field.values, null, null);
         input.removeAttr("style").removeAttr("readonly").removeAttr("disabled");
         input.attr("name", field.fieldname);
         input.attr("fieldtype", field.type);

@@ -28,6 +28,8 @@ import com.nucleus.transientmodel.AssociationUpdates;
 public class MetadataService {
 
   private static final String DOT = "\\.";
+  private static final String COMMA = ",";
+
   private static ObjectMapper mapper = new ObjectMapper();
 
   private DatabaseAdapter database;
@@ -236,7 +238,7 @@ public class MetadataService {
       List<AssociationUpdates> associationUpdates = new ArrayList<AssociationUpdates>();
       List<Field> fields = includeGlobalFields(entity, meta);
       Set<String> fieldNameSet = includeGlobalFieldsName(entity, meta);
-      validateInput(input, fields, fieldNameSet, meta, associationUpdates);
+      validateInput(input, fields, fieldNameSet, meta, associationUpdates, entityName);
       return associationUpdates;
     } catch (RuntimeException e) {
       throw new NucleusException(e);
@@ -244,7 +246,7 @@ public class MetadataService {
   }
 
   private void validateInput(Map<String, Object> input, List<Field> fields, Set<String> fieldNameSet, Metadata meta,
-      List<AssociationUpdates> associationUpdates) {
+      List<AssociationUpdates> associationUpdates, String parentEntityName) {
     validateFieldsName(input, fieldNameSet);
     if (fields != null) {
       for (Field field : fields) {
@@ -256,9 +258,9 @@ public class MetadataService {
 
           if (fieldType.equals(PrimaryType.OBJECT)) {
             validateInput((Map<String, Object>) val, field.getFields(), field.getFieldNameSet(), meta,
-                associationUpdates);
+                associationUpdates, parentEntityName);
           } else if (PrimaryType.SET.contains(fieldType)) {
-            input.put(fieldName, cast(val, fieldType, field, meta, associationUpdates));
+            input.put(fieldName, cast(val, fieldType, field, meta, associationUpdates, parentEntityName));
           } else {
             TypeDefinition typeDefinition = meta.getTypeDefinition(fieldType);
             if (typeDefinition == null) {
@@ -269,16 +271,16 @@ public class MetadataService {
               String assType = field.getAssociationType();
               if (assType != null && AssociationType.many_to_many.name().equals(assType)) {
                 field.setSubType(PrimaryType.STRING);
-                List<String> refEntityIds =
-                    (List<String>) cast(val, PrimaryType.ARRAY, field, meta, associationUpdates);
-                updateAssociation(fieldType, refEntityIds, associationUpdates);
+                List<Map<String, Object>> refEntityIdsMap = (List<Map<String, Object>>) cast(val, PrimaryType.ARRAY,
+                    field, meta, associationUpdates, parentEntityName);
+                updateAssociation(parentEntityName, fieldType, refEntityIdsMap, associationUpdates);
                 input.remove(fieldName);
               } else {
-                input.put(fieldName, cast(val, PrimaryType.STRING, field, meta, associationUpdates));
+                input.put(fieldName, cast(val, PrimaryType.STRING, field, meta, associationUpdates, parentEntityName));
               }
             } else {
               validateInput((Map<String, Object>) val, typeDefinition.getFields(), typeDefinition.getFieldNameSet(),
-                  meta, associationUpdates);
+                  meta, associationUpdates, parentEntityName);
             }
           }
         }
@@ -286,11 +288,20 @@ public class MetadataService {
     }
   }
 
-  private void updateAssociation(String refEntityName, List<String> refEntityIds,
-      List<AssociationUpdates> associationUpdates) {
+  private void updateAssociation(String parentEntityName, String refEntityName,
+      List<Map<String, Object>> refEntityIdsMap, List<AssociationUpdates> associationUpdates) {
+    refEntityIdsMap.forEach(entry -> {
+      String value = (String) entry.get(Fields.VALUE);
+      if (value.contains(COMMA)) {
+        String[] values = value.split(COMMA);
+        entry.put(Fields.VALUE, values[0]);
+        entry.put(Fields.PREVIOUS_VALUE, values[1]);
+      }
+    });
     AssociationUpdates update = new AssociationUpdates();
+    update.setParentEntityName(parentEntityName);
     update.setRefEntityName(refEntityName);
-    update.setRefEntityIds(refEntityIds);
+    update.setRefEntityIdsMapList(refEntityIdsMap);
     associationUpdates.add(update);
   }
 
@@ -325,7 +336,7 @@ public class MetadataService {
   }
 
   private Object cast(Object value, String fieldType, Field field, Metadata meta,
-      List<AssociationUpdates> associationUpdates) {
+      List<AssociationUpdates> associationUpdates, String parentEntityName) {
     value = parseString(value, fieldType);
     try {
       switch (fieldType) {
@@ -355,18 +366,23 @@ public class MetadataService {
           String subType = field.getSubType();
           if (subType.equals(PrimaryType.OBJECT)) {
             List<Map<String, Object>> list = (List<Map<String, Object>>) value;
-            list.forEach(e -> validateInput(e, field.getFields(), field.getFieldNameSet(), meta, associationUpdates));
+            list.forEach(e -> validateInput(e, field.getFields(), field.getFieldNameSet(), meta, associationUpdates,
+                parentEntityName));
             return value;
           } else if (PrimaryType.SET.contains(subType)) {
             List<Map<String, Object>> list = (List) value;
             list.forEach(elem -> {
               Object serial = elem.get(Fields.SERIAL);
               if (serial != null) {
-                elem.put(Fields.SERIAL, cast(serial, PrimaryType.INTEGER, null, null, null));
+                elem.put(Fields.SERIAL, cast(serial, PrimaryType.INTEGER, null, null, null, parentEntityName));
               }
-              Object val = elem.get(Fields.VALUE);
               if (elem.containsKey(Fields.VALUE)) {
-                elem.put(Fields.VALUE, cast(val, subType, null, null, null));
+                Object val = elem.get(Fields.VALUE);
+                elem.put(Fields.VALUE, cast(val, subType, null, null, null, parentEntityName));
+              }
+              if (elem.containsKey(Fields.PREVIOUS_VALUE)) {
+                Object prev_val = elem.get(Fields.PREVIOUS_VALUE);
+                elem.put(Fields.PREVIOUS_VALUE, cast(prev_val, subType, null, null, null, parentEntityName));
               }
             });
             return list;
@@ -374,7 +390,7 @@ public class MetadataService {
             TypeDefinition typeDefinition = meta.getTypeDefinition(subType);
             List<Map<String, Object>> list = (List<Map<String, Object>>) value;
             list.forEach(e -> validateInput(e, typeDefinition.getFields(), typeDefinition.getFieldNameSet(), meta,
-                associationUpdates));
+                associationUpdates, parentEntityName));
             return value;
           }
         }
@@ -424,10 +440,11 @@ public class MetadataService {
       Map<String, Object> doc = new HashMap<>();
       convertToDoc(fullFieldName, updates.get(fullFieldName), doc);
 
-      validateInput(doc, fields, fieldNameSet, meta, associationUpdates);
-      Object verifiedValue = getVerifiedValue(fullFieldName, doc);
-
-      updatesToSet.put(fullFieldToSetString, verifiedValue);
+      validateInput(doc, fields, fieldNameSet, meta, associationUpdates, entityName);
+      if (!doc.isEmpty()) {
+        Object verifiedValue = getVerifiedValue(fullFieldName, doc);
+        updatesToSet.put(fullFieldToSetString, verifiedValue);
+      }
     }
     return Arrays.asList(associationUpdates, updatesToSet, arrayFilters);
   }

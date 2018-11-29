@@ -13,6 +13,7 @@ public class Fields {
   public static final String UPDATE_DATE = "updatedate";
   public static final String SERIAL = "serial";
   public static final String VALUE = "value"; // for non object array elements
+  public static final String PREVIOUS_VALUE = "previous_value";
   public static final String DEFAULT = "default_doc";
   public static final String JSON = "json";
   public static final String SIMPLE_CLIENT_DEFAULT_ENTITY = "simpleclient";

@@ -1,7 +1,6 @@
 package com.nucleus.service;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +13,7 @@ import com.nucleus.constants.Fields;
 import com.nucleus.database.CollectionName;
 import com.nucleus.database.DatabaseAdapter;
 import com.nucleus.exception.NucleusException;
+import com.nucleus.metadata.AssociationType;
 import com.nucleus.metadata.Entity;
 import com.nucleus.metadata.Metadata;
 
@@ -25,7 +25,7 @@ public class AssociationService {
   DatabaseAdapter databaseAdapter;
 
   public void updateResponseWithAssociationData(List<Map<String, Object>> responses, String responseEntityName,
-      Metadata meta) {
+      Metadata meta, String client) {
     Entity entity = meta.getEntity(responseEntityName);
 
     // Many to many
@@ -42,7 +42,8 @@ public class AssociationService {
       for (Entry<List<String>, String> e : manyToManyRefEntities.entrySet()) {
         List<String> associatedField = e.getKey();
         String associatedEntityName = e.getValue();
-        updateWithManyToManyEntity(responseIdMap, responseEntityName, associatedField, associatedEntityName, meta);
+        updateWithManyToManyEntity(responseIdMap, responseEntityName, associatedField, associatedEntityName, meta,
+            client);
       }
     }
 
@@ -52,32 +53,40 @@ public class AssociationService {
       for (Entry<List<String>, String> e : manyToOneRefEntities.entrySet()) {
         List<String> associatedField = e.getKey();
         String associatedEntityName = e.getValue();
-        updateWithManyToOneEntity(responses, associatedField, associatedEntityName, meta);
+        updateWithManyToOneEntity(responses, associatedField, associatedEntityName, meta, client);
       }
     }
   }
 
   private void updateWithManyToManyEntity(Map<Object, Map<String, Object>> responseIdMap, String responseEntityName,
-      List<String> associatedField, String associatedEntityName, Metadata meta) {
+      List<String> associatedField, String associatedEntityName, Metadata meta, String client) {
 
-    Bson query = Filters.and(Filters.eq(Fields.ASS_NAME, Arrays.asList(responseEntityName, associatedEntityName)),
-        Filters.in(Fields.ASS_MAPPING + "." + responseEntityName, responseIdMap.keySet()));
-    Map<String, Object> association = databaseAdapter.get(query, CollectionName.association.name()).get(0);
+    Bson query = Filters.and(Filters.in(Fields.ASS_MAPPING, responseIdMap.keySet()),
+        Filters.eq(Fields.ASS_NAME, responseEntityName), Filters.eq(Fields.ASS_NAME, associatedEntityName));
+
+    List<Map<String, Object>> associations = databaseAdapter.get(query, CollectionName.association.name());
 
     List<Map<String, Object>> responsesContainingAssociatedEntity = new ArrayList<Map<String, Object>>();
     List<String> associatedEntityIds = new ArrayList<String>();
-    if (association != null) {
-      for (Map<String, String> ass : (List<Map<String, String>>) association.get(Fields.ASS_MAPPING)) {
-        associatedEntityIds.add(ass.get(associatedEntityName));
-        responsesContainingAssociatedEntity.add(responseIdMap.get(ass.get(responseEntityName)));
+    if (!associations.isEmpty()) {
+      for (Map<String, Object> ass : associations) {
+        List<String> mapping = (List<String>) ass.get(Fields.ASS_MAPPING);
+        if (responseIdMap.containsKey(mapping.get(0))) {
+          responsesContainingAssociatedEntity.add(responseIdMap.get(mapping.get(0)));
+          associatedEntityIds.add(mapping.get(1));
+        } else {
+          responsesContainingAssociatedEntity.add(responseIdMap.get(mapping.get(1)));
+          associatedEntityIds.add(mapping.get(0));
+        }
       }
     }
 
-    updateDb(associatedField, associatedEntityName, meta, associatedEntityIds, responsesContainingAssociatedEntity);
+    updateDb(associatedField, associatedEntityName, meta, associatedEntityIds, responsesContainingAssociatedEntity,
+        client, AssociationType.many_to_many);
   }
 
   private void updateWithManyToOneEntity(List<Map<String, Object>> responses, List<String> associatedField,
-      String associatedEntityName, Metadata meta) {
+      String associatedEntityName, Metadata meta, String client) {
     List<Map<String, Object>> responsesContainingAssociatedEntity = new ArrayList<Map<String, Object>>();
     List<String> associatedEntityIds = new ArrayList<String>();
     for (Map<String, Object> response : responses) {
@@ -88,37 +97,38 @@ public class AssociationService {
       }
     }
 
-    updateDb(associatedField, associatedEntityName, meta, associatedEntityIds, responsesContainingAssociatedEntity);
+    updateDb(associatedField, associatedEntityName, meta, associatedEntityIds, responsesContainingAssociatedEntity,
+        client, AssociationType.many_to_one);
   }
 
   private void updateDb(List<String> associatedField, String associatedEntityName, Metadata meta,
-      List<String> associatedEntityIds, List<Map<String, Object>> responsesContainingAssociatedEntity) {
+      List<String> associatedEntityIds, List<Map<String, Object>> responsesContainingAssociatedEntity, String client,
+      AssociationType assType) {
 
     Bson query = QueryService.getQuery(associatedEntityIds);
-    List<Map<String, Object>> associatedEntities = databaseAdapter.get(query, associatedEntityName);
+    List<Map<String, Object>> associatedEntities =
+        databaseAdapter.get(query, getCollectionName(client, associatedEntityName));
     if (!associatedEntities.isEmpty()) {
       for (int i = 0; i < associatedEntityIds.size(); i++) {
         String id = associatedEntityIds.get(i).toString();
         Map<String, Object> associatedEntity =
             associatedEntities.stream().filter(e -> id.equals(e.get(Fields.ID))).findFirst().get();
-        removeInternalParameters(associatedEntity);
+        removeGlobalFields(associatedEntity, meta);
         Map<String, Object> response = responsesContainingAssociatedEntity.get(i);
-        setNestedField(response, associatedField, associatedEntity);
+        setNestedField(response, associatedField, associatedEntity, assType);
       }
 
       // update entities with their associations
-      updateResponseWithAssociationData(associatedEntities, associatedEntityName, meta);
+      updateResponseWithAssociationData(associatedEntities, associatedEntityName, meta, client);
     }
   }
 
-  private void removeInternalParameters(Map<String, Object> associatedEntity) {
-    associatedEntity.remove(Fields.CLIENT);
-    associatedEntity.remove(Fields.ENVIRONMENT);
-    associatedEntity.remove(Fields.LOCALIZATION);
+  private void removeGlobalFields(Map<String, Object> associatedEntity, Metadata meta) {
+    meta.getGlobalFieldsSet().forEach(fieldname -> associatedEntity.remove(fieldname));
   }
 
   private void setNestedField(Map<String, Object> doc, List<String> associatedField,
-      Map<String, Object> entityToSetInDoc) {
+      Map<String, Object> entityToSetInDoc, AssociationType assType) {
     Object temp = doc;
     int length = associatedField.size();
 
@@ -131,8 +141,20 @@ public class AssociationService {
       }
     }
     if (temp instanceof Map) {
-      ((Map<String, Object>) temp).put(associatedField.get(length - 1), entityToSetInDoc);
+      if (assType.equals(AssociationType.many_to_one)) {
+        ((Map<String, Object>) temp).put(associatedField.get(length - 1), entityToSetInDoc);
+      } else {
+        addInArrayField((Map<String, Object>) temp, associatedField.get(length - 1), entityToSetInDoc);
+      }
     }
+  }
+
+  private void addInArrayField(Map<String, Object> object, String fieldName, Object fieldValue) {
+    if (!object.containsKey(fieldName)) {
+      object.put(fieldName, new ArrayList<>());
+    }
+    List<Object> valueArray = (List<Object>) object.get(fieldName);
+    valueArray.add(fieldValue);
   }
 
   private String getNestedField(Map<String, Object> doc, List<String> associatedField) {
@@ -148,6 +170,10 @@ public class AssociationService {
     } else {
       throw new NucleusException("Invalid data.");
     }
+  }
+
+  private String getCollectionName(String client, String entity) {
+    return new StringBuilder(client).append("_").append(entity).toString();
   }
 
 }

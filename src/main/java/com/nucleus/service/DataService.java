@@ -287,7 +287,7 @@ public class DataService {
       documents = databaseAdapter.get(query, returnFields, getCollectionName(client, entity));
     }
     if (withAssociationData) {
-      associationService.updateResponseWithAssociationData(documents, entity, meta);
+      associationService.updateResponseWithAssociationData(documents, entity, meta, client);
     }
     return documents;
   }
@@ -319,7 +319,7 @@ public class DataService {
     }
 
     query = QueryService.getQuery(Arrays.asList(id));
-    return databaseAdapter.update(query, updatesToSet, null, getCollectionName(client, entity), null);
+    return databaseAdapter.update(query, updatesToSet, null, getCollectionName(client, entity));
   }
 
   public Long updateEntities(String client, String entity, List<String> ids, Map<String, Object> updates) {
@@ -336,7 +336,7 @@ public class DataService {
     List<Document> arrayFilters = (List<Document>) data.get(2);
     Bson query = QueryService.getQuery(ids);
     return databaseAdapter.update(query, updatesToSet, arrayFilters, getCollectionName(client, entity),
-        associationUpdates);
+        associationUpdates, client);
   }
 
   public Long addInEntityArray(String client, String entity, List<String> ids, Map<String, Object> updates) {
@@ -365,11 +365,19 @@ public class DataService {
     removePrimaryFields(meta.getEntity(entity), deletes);
 
     List<Object> data = metadataService.convertInputUpdateToDbUpdates(deletes, entity, client, meta);
+    Long docDeleteCount = 0L;
     Map<String, Object> deletesToSet = (Map<String, Object>) data.get(1);
-    List<Document> arrayFilters = (List<Document>) data.get(2);
-    Bson query = QueryService.getQuery(ids);
-    return databaseAdapter.deleteInArray(query, arraySize, deletesToSet, arrayFilters,
-        getCollectionName(client, entity));
+    if (!deletesToSet.isEmpty()) {
+      List<Document> arrayFilters = (List<Document>) data.get(2);
+      Bson query = QueryService.getQuery(ids);
+      docDeleteCount = databaseAdapter.deleteInArray(query, arraySize, deletesToSet, arrayFilters,
+          getCollectionName(client, entity));
+    }
+    if (!((List) data.get(0)).isEmpty()) {
+      Long assDeleteCount = databaseAdapter.deleteAssociations(ids, (List) data.get(0)).longValue();
+      docDeleteCount = (assDeleteCount > 0) ? assDeleteCount : docDeleteCount;
+    }
+    return docDeleteCount;
   }
 
   private Map<String, Object> getPrimaryFieldsValueMap(Metadata meta, String entity, Map<String, Object> doc) {
@@ -413,7 +421,7 @@ public class DataService {
     if (associationUpdates.isEmpty()) {
       return databaseAdapter.create(document, getCollectionName(client, entity));
     }
-    return databaseAdapter.create(document, getCollectionName(client, entity), associationUpdates);
+    return databaseAdapter.create(document, getCollectionName(client, entity), associationUpdates, client);
   }
 
 
