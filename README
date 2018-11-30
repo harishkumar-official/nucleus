@@ -3,9 +3,7 @@ Nucleus is a generic configuration application.
 The core has two parts -
 1. Metadata - Here you define your entities, type_definitions, fields, global_fields etc. 
 2. Appdata  - Here you assign the real values to the fields you created in metadata.
-
-Additionally,
-There's a capibility of creating simple json of configuration data as well.
+3. Additionally, there's a capability of creating simple key-value configuration data in JSON form, if metadata is too much work for the client.
 
 
 Design Goals:
@@ -60,6 +58,11 @@ Appdata:
     b. All files are uploaded to Amazon S3 bucket and its URL is saved in the DB
     c. You can preview it also on the appdata page after successful upload
 
+Simpledata:
+1. Here client can create simple key-value parameters
+2. Since you can define data in JSON form, you can create complex objects as well
+3. But here you are restricted to have only environment and localization as the global fields
+4. There are no entity concept here, so you can create only one document for a combo of environment and localization values
 
 Database Design:
 Mongo Collections -
