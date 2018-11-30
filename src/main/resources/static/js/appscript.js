@@ -536,7 +536,7 @@ function populateFields(fields, parentDiv, parentId, index, allowOnlyPrimary) {
             if (field.required == true) {
                 required = "<label style='padding-left:2px; color:red'>*<label>";
             }
-            div.append(inputRef.children("span").clone().append(displayname + required));
+            div.append(inputRef.children("span").clone().append(displayname + required).addClass("displayname"));
             div.append(inputRef.children("span").clone().append(fieldtype + " ").addClass("fieldtype"));
             if (subtype) {
                 div.append(inputRef.children("span").clone().append(subtype + " ").addClass("subtype"));
@@ -700,9 +700,13 @@ function populatePrimaryFields(fields, mainDiv) {
         if (response) {
             save.hide();
             edit.show();
+            var currentDocId = appDataJsonObj["id"];
+            var docListDiv = $("#" + currentDocId).text("");
+            var divRef = $(".empty").clone().removeClass("empty");
             $.each(fields, function (index, fieldElem) {
                 var field = $(fieldElem);
                 var fieldtype = field.children(".fieldtype").text().trim();
+                var displayname = field.children(".displayname").text().trim().replace("*", "");
                 var input = field.children("input, select");
                 if (input[0].nodeName == "SELECT") {
                     input.attr("disabled", "disabled");
@@ -712,6 +716,10 @@ function populatePrimaryFields(fields, mainDiv) {
                 if (fieldtype == "date") {
                     input.datetimepicker("option", "disabled", true);
                 }
+                // updating docListDiv
+                var fieldDiv = divRef.clone();
+                fieldDiv.append(displayname).append(" = ").append(input.val());
+                docListDiv.append(fieldDiv);
             });
         }
     });
