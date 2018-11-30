@@ -179,7 +179,7 @@ public class DataService {
     Map<String, Object> updatesToSet = (Map<String, Object>) data.get(0);
     List<Document> arrayFilters = (List<Document>) data.get(1);
 
-    Bson query = QueryService.getQuery(client, ids);
+    Bson query = QueryService.getQuery(ids);
     Long updatedCount = databaseAdapter.update(query, updatesToSet, arrayFilters, CollectionName.metadata.name());
     return checkSuccess(ids.size(), updatedCount.intValue());
   }
@@ -201,7 +201,7 @@ public class DataService {
     Map<String, Object> updatesToSet = (Map<String, Object>) data.get(0);
     List<Document> arrayFilters = (List<Document>) data.get(1);
 
-    Bson query = QueryService.getQuery(client, ids);
+    Bson query = QueryService.getQuery(ids);
     Long updatedCount = databaseAdapter.addInArray(query, updatesToSet, arrayFilters, CollectionName.metadata.name());
     return checkSuccess(ids.size(), updatedCount.intValue());
   }
@@ -215,7 +215,7 @@ public class DataService {
     Map<String, Object> deletesToSet = (Map<String, Object>) data.get(0);
     List<Document> arrayFilters = (List<Document>) data.get(1);
 
-    Bson query = QueryService.getQuery(client, ids);
+    Bson query = QueryService.getQuery(ids);
     Long updatedCount = databaseAdapter.deleteInArray(query, existingMaxSerial, deletesToSet, arrayFilters,
         CollectionName.metadata.name());
     return checkSuccess(ids.size(), updatedCount.intValue());
@@ -491,7 +491,7 @@ public class DataService {
     Map<String, Object> updatesToSet = (Map<String, Object>) data.get(1);
     List<Document> arrayFilters = (List<Document>) data.get(2);
 
-    Bson query = QueryService.getQuery(client, Arrays.asList(ids.split(COMMA)));
+    Bson query = QueryService.getQuery(Arrays.asList(ids.split(COMMA)));
     Long success = databaseAdapter.update(query, updatesToSet, arrayFilters, getCollectionName(client, entity));
     if (success == 1) {
       return fileUrl;

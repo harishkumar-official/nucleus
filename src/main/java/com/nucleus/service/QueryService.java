@@ -30,17 +30,6 @@ public class QueryService {
     return Filters.and(list);
   }
 
-  public static Bson getQuery(String client, List<String> ids) {
-    List<Bson> list = new ArrayList<Bson>();
-    if (!StringUtils.isEmpty(client)) {
-      list.add(Filters.eq(Fields.CLIENT, client));
-    }
-    if (ids != null) {
-      list.add(getQuery(ids));
-    }
-    return Filters.and(list);
-  }
-
   public static Bson getQuery(List<String> ids) {
     List<ObjectId> list = new ArrayList<>();
     for (String id : ids) {

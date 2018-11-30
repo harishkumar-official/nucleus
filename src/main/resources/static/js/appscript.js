@@ -330,8 +330,7 @@ function assignArrayElementRemove(removeSpan, arrayEntry, isEntityType) {
         var elem = $(this).siblings("select, input");
         var elemValue = elem.val().trim();
 
-        var disabledAttr = elem.attr("disabled");
-        if (!disabledAttr) {
+        if ((elem.is("select") && !elem.attr("disabled")) || (elem.is("input") && !elem.attr("readonly"))) {
             return false;
         }
 
@@ -770,8 +769,8 @@ function loadEntitySelector(entityMap) {
 
     var select = selectRef.clone().removeClass("select");
     var optionRef = select.children("option").remove();
-    $.each(entityMap, function (entityname, entity) {
-        select.append(optionRef.clone().text(entity.displayname).val(entityname));
+    $.each(entityMap, function (entityname, entityObject) {
+        select.append(optionRef.clone().text(entityObject.displayname).val(entityname));
     });
     select.removeAttr("disabled");
     var span = spanRef.clone().append("<label>Entity</label>").append(select.show())
@@ -779,6 +778,7 @@ function loadEntitySelector(entityMap) {
     select.selectmenu({
         change: function () {
             entity = $(this).val();
+            delete entityDocSelectMap[entity]; // to refresh current entity doclist
 
             // Populate metadata
             populateMetadata();

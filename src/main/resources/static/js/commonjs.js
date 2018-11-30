@@ -110,11 +110,8 @@ function ajaxCall(baseurl, type, dataObject) {
         data: JSON.stringify(dataObject),
         contentType: 'application/json; charset=UTF-8'
     }).success(function (data) {
-        if (data == 0) {
-            success = false;
-        }
+        success = true;
         if (data && data > 0) {
-            success = true;
             if (type == "add") {
                 notifySuccess("Added, Woo hoo!");
             } else if (type == "delete") {
