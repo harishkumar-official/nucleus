@@ -6,3 +6,63 @@ The core has two parts -
 
 Additionally,
 There's a capibility of creating simple json of configuration data as well.
+
+
+Design Goals:
+1. Use Metadata to define any Entity dynamically
+2. Validate input through Metadata to discard corrupt data
+3. Support localization
+4. No need to code again for defining any new field or entity
+5. High Availability and Scalability
+
+
+Tech Stack:
+1. Java and Spring Boot - Matured, stable, widely known and documented
+2. Mongo - 
+    a. NoSQL DB
+    b. Provides DB Scalability, Resiliency and High-Availability with Clusterization, Replication and Sharding.
+    c. Inbuilt caching
+    d. Production tested and widely used in live system
+
+
+Design:
+
+Metadata:
+1. Each client can define its own metadata
+2. It contains global_fields, entities and type_definitions -
+    a. Global Category Fields
+      i. They apply across all entities. Eg: environment, localization etc
+    b. Entities
+      i. An entity is a group of fields and client can create any number of entities
+      ii. Client can choose to assign simple primary types (integer, string, date, file, enum, array etc) or can create custom object type
+    c. Type Definitions
+      i. Here you can define multiple custom objects
+      ii. And use them directly across multiple entities or at different places
+3. Associations - assign entities to other entity in Many-To-One or Many-To-Many association type
+4. Primary Fields - 
+    a. These are the fields which uniquely identifies a document in an entity
+    b. If not defined, you can create only one document per entity
+5. Query Fields - 
+    a. You can by default query your documents in an entity based on global fields and primary fields 
+    b. But if you want to query on some other field(s) also, define them as query fields
+6. Localization -
+    a. Define meta-data for each locale (or language) to display UI in multiple languages
+    b. This is applicable only for metadata fields only
+    c. When you add a field in one locale metadata it gets added in other locales as well, you just need to update the display name and description in other locale(s)
+    d. Appdata can be localized by defining a global field for localization
+
+Appdata:
+1. Here client can assign values to the fields created in metadata
+2. Create multiple documents of an entitiy differentiated based on primary fields for given global fields.
+3. If there's no primary field then you can create only one document per entity
+4. Upload Files - 
+    a. If you have define a field of type file in metadata then you'll get the upload option on appdata page
+    b. All files are uploaded to Amazon S3 bucket and its URL is saved in the DB
+    c. You can preview it also on the appdata page after successful upload
+
+
+Database Design:
+Mongo Collections -
+  a. One collection for Metadata
+  b. One collection for each entity defined in the Metadata
+  c. One collection for association between entities
