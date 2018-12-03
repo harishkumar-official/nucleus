@@ -1,4 +1,4 @@
-function loadToolbar(client, isMetaClient, isMetadata, localizations, environments) {
+function loadToolbar(client, isMetaClient, localizations, environments) {
     var clientSpan = $(".toolbar .client");
     var metabuttonsSpan = $(".toolbar .metabuttons");
 

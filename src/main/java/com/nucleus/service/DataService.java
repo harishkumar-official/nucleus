@@ -160,10 +160,6 @@ public class DataService {
 
   /*-----Meta-Data APIs-----*/
 
-  public Metadata getMetadataObject(String client) {
-    return metadataService.getMetadata(client);
-  }
-
   public List<Map<String, Object>> getMetaData(String client, String localization) {
     checkMandatoryField(client, Fields.CLIENT);
 

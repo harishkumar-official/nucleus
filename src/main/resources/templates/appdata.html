@@ -21,11 +21,12 @@
 
 		.global_fields label {
 			font-size: 10;
-			color: grey;
+			color: black;
 		}
 
 		.global_fields>span {
 			margin-left: 3px;
+			margin-top: 8px;
 		}
 
 		.primary {
@@ -54,6 +55,15 @@
 
 		input {
 			background-color: initial;
+		}
+
+		.global_fields {
+			position: absolute;
+			top: 50px;
+			background-color: rgb(200, 200, 200);
+			left: 0px;
+			width: 190px;
+			height: 100%;
 		}
 	</style>
 </head>
@@ -117,7 +127,6 @@
 	var client = /*[[${client}]]*/ "";
 	var metadata = /*[[${metadata}]]*/ "";
 	var localizations = /*[[${localizations}]]*/ "";
-	var appdata = /*[[${appdata}]]*/ "";
 	var entity = /*[[${entity}]]*/ "";
 
 	var metaBaseURL = "/v1/metadata/" + client;
@@ -136,7 +145,7 @@
 	var dialog = setupDialogBox(dialogFields);
 
 	// load navigator
-	loadToolbar(client, true, false, localizations, null);
+	loadToolbar(client, true, localizations, null);
 
 	function load() {
 		entities = currentMetadata.entities;
@@ -157,7 +166,7 @@
 		populateMetadata();
 
 		// Populate doclist
-		populateDoclist(appdata);
+		populateDoclist();
 	}
 
 	// load data

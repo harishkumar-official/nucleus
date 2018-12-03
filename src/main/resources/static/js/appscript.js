@@ -775,6 +775,8 @@ function loadEntitySelector() {
     select.removeAttr("disabled");
     var span = spanRef.clone().append("<label>Entity</label>").append(select.show())
     div.append(span);
+
+    entity = select.val();
     select.selectmenu({
         change: function () {
             entity = $(this).val();
@@ -823,6 +825,7 @@ function loadGlobalFields(globalFields) {
 
     // set doc divs heights
     var height = "calc(100% - " + div.outerHeight() + "px)";
+    height = "calc(100%)";
     $(".doclist").css("height", height);
     $(".docdata").css("height", height);
 
@@ -833,16 +836,35 @@ function loadGlobalFields(globalFields) {
     });
 }
 
-function populateDoclist(appdata) {
+function appendFilter(div) {
+    var inwards = "Filters <";
+    var outwards = "Filters";
+    div.append("<span style='color:grey'></span>");
+    var span = div.children("span");
+    span.append("<label>Documents</label>");
+    span.append("<label class='filter' style='float:right;cursor:pointer;margin-right:4px'>" + outwards + "</label>");
+
+    $(".global_fields").hide();
+    span.children(".filter").click(function () {
+        var val = $(this).text();
+        if (val == outwards) {
+            $(".global_fields").toggle("slide");
+            $(this).text(inwards);
+        } else {
+            $(".global_fields").toggle("slide");
+            $(this).text(outwards);
+        }
+    });
+}
+
+function populateDoclist() {
     var mainDiv = $(".docdata");
     mainDiv.hide();
     var docListDiv = $(".doclist").text("");
     var divRef = docListDiv.clone().removeClass("doclist").removeAttr("style");
-    docListDiv.append("<label>Documents</label>");
+    appendFilter(docListDiv);
 
-    if (!appdata) {
-        appdata = getAppdata();
-    }
+    appdata = getAppdata();
     if (appdata && appdata.length > 0) {
         mainDiv.show();
         appdata.forEach(data => {
