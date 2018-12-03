@@ -249,7 +249,7 @@ function assignEdit(div, elem, isEntityType) {
         var response = false;
         if (isEntityType == true) {
             var flag = false;
-            $.each($("#ten select[disabled]"), function () {
+            $.each(div.parent().find("select[disabled]"), function () {
                 if (this.value == fieldValue) {
                     notifyError("Duplicate value");
                     flag = true;
@@ -824,7 +824,7 @@ function loadGlobalFields(globalFields) {
     $(".docdata").css("height", height);
 
     // populate create button
-    var button = $(".menubar .create");
+    var button = $(".toolbar .create");
     button.click(function () {
         dialog.dialog("open");
     });

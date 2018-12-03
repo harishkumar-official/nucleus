@@ -1,41 +1,27 @@
 function loadToolbar(client, isMetaClient, isMetadata, localizations, environments) {
     var clientSpan = $(".toolbar .client");
-    var metadataSpan = $(".toolbar .metadata");
-    var typeSelect = metadataSpan.children("select");
-    var environmentSpan = $(".toolbar .environment");
-    var localizationSpan = $(".toolbar .localization");
-    var selectRef = $(".toolbar .select");
+    var metabuttonsSpan = $(".toolbar .metabuttons");
 
     // client
     clientSpan.text(client);
 
     // metadata
     if (isMetaClient == false) {
-        metadataSpan.hide();
+        metabuttonsSpan.hide();
     } else {
-        metadataSpan.show();
-        if (isMetadata) {
-            typeSelect.val("metadata");
-            environmentSpan.hide();
-        } else {
-            typeSelect.val("appdata");
-        }
-        typeSelect.selectmenu();
+        metabuttonsSpan.show();
+        metabuttonsSpan.children(".metadata").click(function () {
+            window.location.href = "/ui/metadata?client=" + client;
+        });
+        metabuttonsSpan.children(".appdata").click(function () {
+            window.location.href = "/ui/appdata?client=" + client;
+        });
     }
-    typeSelect.selectmenu({
-        change: function () {
-            var value = $(this).val();
-            var form = $(".toolbar .appform");
-            if (value == "metadata") {
-                form = $(".toolbar .metaform");
-            }
-            form.children("input").val(client);
-            form.submit();
-        }
-    });
 
+    var selectRef = $(".toolbar .select");
     // environment
     if (environments) {
+        var environmentSpan = $(".toolbar .environment");
         environmentSpan.show();
         var select = selectRef.clone().removeClass("select").show();
         var optionRef = select.children("option").remove();
@@ -48,6 +34,7 @@ function loadToolbar(client, isMetaClient, isMetadata, localizations, environmen
 
     // localization
     if (localizations) {
+        var localizationSpan = $(".toolbar .localization");
         localizationSpan.show();
         var select = selectRef.clone().removeClass("select").show();
         var optionRef = select.children("option").remove();

@@ -20,28 +20,15 @@ html, body {
 .navigator {
 	height: 50px;
 }
-.navigator .toolbar .menubar {
-    width: 100px;
-    text-align: center;
-    font-family: Andale Mono;
-    position: relative;
-}
-.navigator .toolbar .menubar .client {
+.navigator .toolbar .client {
     display:inline-block;
     width: 100px;
     cursor: pointer;
     padding-top: 2px;
+    text-align: center;
+    font-family: Andale Mono;
 }
-.navigator .toolbar .menu {
-    display:none;
-    top: 0;
-    right: 103px;
-    position: absolute;
-    /* width: 23.4em; */
-    width: 11.4em;
-    margin-top: -2px;
-}
-.navigator .toolbar .menu button {
+.navigator .toolbar button {
     border: 1px solid rgb(200, 200, 200);
     background-color: rgb(247, 247, 247);
     font-size: 11;
@@ -49,11 +36,11 @@ html, body {
     color: rgb(80, 80, 80);
     cursor: pointer;
     display: inline-block;
-    height: 25px;
+    height: 27px;
     border-radius: 3px;
     margin-left: -5px;
 }
-.navigator .toolbar .menu button:hover {
+.navigator .toolbar button:hover {
     border: 1px solid #003eff;
     background: #007fff;
     color: #ffffff;

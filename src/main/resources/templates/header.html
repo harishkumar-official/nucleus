@@ -6,31 +6,16 @@
     <div class="toolbar" style="float:right; display:none">
         <span class="localization" style="display:inline-block"></span>
         <span class="environment" th:if="${environments} != null" style="display:inline-block"></span>
-        <span class="metadata" th:if="${simpledata} == null" style="display:inline-block">
-            <select name="datatype">
-                <option value="metadata">Metadata</option>
-                <option value="appdata">Appdata</option>
-            </select>
+        <button class="create">Create</button>
+        <span class="metabuttons" th:if="${metadata} != null" style="display:inline-block">
+            <button class="metadata" th:if="${appdata} != null">Metadata</button>
+            <button class="appdata" th:if="${appdata} == null">Appdata</button>
         </span>
-        <span class="menubar">
-            <span class="client" th:text="${client}"></span>
-            <span class="menu">
-                <button class="create">Create</button>
-                <!-- <button class="clone">Clone</button> -->
-            </span>
-        </span>
+        <span class="client" th:text="${client}"></span>
 
         <select class="select" style="display:none">
             <option value="">None</option>
         </select>
-
-        <!-- hidden forms -->
-        <form class="metaform" action="/ui/metadata" method="GET" style="display:none">
-            <input name="client" />
-        </form>
-        <form class="appform" action="/ui/appdata" method="GET" style="display:none">
-            <input name="client" />
-        </form>
     </div>
 </div>
 
@@ -42,7 +27,7 @@
         window.location.href = "/ui";
     });
 
-    $(".client").click(function (e) {
+    /* $(".client").click(function (e) {
         var menu = $(".menu");
         if (menu.is(":visible")) {
             $(".menu").hide();
@@ -51,5 +36,5 @@
             $(".metadata, .environment, .localization").hide();
             $(".menu").slideDown(200);
         }
-    });
+    }); */
 </script>

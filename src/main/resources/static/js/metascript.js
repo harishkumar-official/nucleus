@@ -890,7 +890,7 @@ function populateCreateButton() {
 	input.attr("name", "localization");
 	fieldset.append(label).append(input);
 
-	var button = $(".menubar .create");
+	var button = $(".toolbar .create");
 	button.click(function () {
 		dialog.dialog("open");
 	});
