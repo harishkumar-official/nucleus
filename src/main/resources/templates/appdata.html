@@ -116,45 +116,65 @@
 
 	var client = /*[[${client}]]*/ "";
 	var metadata = /*[[${metadata}]]*/ "";
+	var localizations = /*[[${localizations}]]*/ "";
 	var appdata = /*[[${appdata}]]*/ "";
 	var entity = /*[[${entity}]]*/ "";
 
 	var metaBaseURL = "/v1/metadata/" + client;
 	var clientBaseURL = "/v1/client/" + client;
 
-	var globalFields = metadata.global_fields;
-	var entities = metadata.entities;
-	var typeDef = metadata.type_definitions;
+	var currentMetadata = metadata[localizations[0]];
+
+	var entities;
+	var typeDef;
 
 	var typeDefMap = new Object();
-	typeDef.forEach(type => {
-		typeDefMap[type.typename] = type;
-	});
-
 	var entityMap = new Object();
-	entities.forEach(entity => {
-		entityMap[entity.entityname] = entity;
-	});
-
 
 	// populate dialog box
 	var dialogFields = $("#dialog-form fieldset input[type=text], select");
 	var dialog = setupDialogBox(dialogFields);
 
 	// load navigator
-	loadToolbar(client, true, false, null, null);
+	loadToolbar(client, true, false, localizations, null);
 
-	// load entity selector
-	loadEntitySelector(entityMap);
+	function load() {
+		entities = currentMetadata.entities;
+		typeDef = currentMetadata.type_definitions;
 
-	// load global fields
-	loadGlobalFields(globalFields);
+		typeDef.forEach(type => {
+			typeDefMap[type.typename] = type;
+		});
 
-	// Populate metadata
-	populateMetadata();
+		entities.forEach(entity => {
+			entityMap[entity.entityname] = entity;
+		});
 
-	// Populate doclist
-	populateDoclist(appdata);
+		// load global fields
+		loadGlobalFields(currentMetadata.global_fields);
+
+		// Populate metadata
+		populateMetadata();
+
+		// Populate doclist
+		populateDoclist(appdata);
+	}
+
+	// load data
+	load();
+
+	// on localization value change
+	$(".toolbar .localization select").selectmenu({
+		change: function () {
+			var localization = $(".toolbar .localization select").val();
+
+			// get metadata
+			currentMetadata = metadata[localization];
+
+			// reload data
+			load();
+		}
+	});
 
 </script>
 

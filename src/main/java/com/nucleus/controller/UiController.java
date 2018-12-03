@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 import com.nucleus.constants.Fields;
 import com.nucleus.exception.NucleusException;
@@ -137,12 +136,12 @@ public class UiController {
    */
   @RequestMapping(value = "/metadata", method = RequestMethod.GET)
   public String metadata(ModelMap model, @RequestParam String client) {
-    List<Map<String, Object>> data = dataService.getMetaData(client, null);
+    List<Map<String, Object>> metadatas = dataService.getMetaData(client, null);
     List<String> localizations = new ArrayList<>();
 
-    model.put("metadata", mapMetaData(data, localizations));
-    model.put("client", client);
+    model.put("metadata", mapMetaData(metadatas, localizations));
     model.put("localizations", localizations);
+    model.put("client", client);
     return "metadata";
   }
 
@@ -158,10 +157,13 @@ public class UiController {
     String entity = metadata.getEntities().get(0).getEntityName();
 
     try {
-      List<Map<String, Object>> data = dataService.getDocList(client, entity, metadata);
-      model.put("metadata", metadata);
-      model.put("appdata", data);
+      List<Map<String, Object>> appdata = dataService.getDocList(client, entity, metadata);
+      List<Map<String, Object>> metadatas = dataService.getMetaData(client, null);
+      List<String> localizations = new ArrayList<>();
+      model.put("metadata", mapMetaData(metadatas, localizations));
+      model.put("localizations", localizations);
       model.put("entity", entity);
+      model.put("appdata", appdata);
       model.put("client", client);
     } catch (Exception e) {
       return redirect(model, client, true);

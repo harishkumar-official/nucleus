@@ -762,7 +762,7 @@ function populateMetadata() {
     mainDiv.hide();
 }
 
-function loadEntitySelector(entityMap) {
+function loadEntitySelector() {
     var div = $(".global_fields");
     var spanRef = $(".input span");
     var selectRef = $(".input .select");
@@ -792,9 +792,12 @@ function loadEntitySelector(entityMap) {
 var queryFields;
 function loadGlobalFields(globalFields) {
     queryFields = new Object();
-    var div = $(".global_fields");
+    var div = $(".global_fields").text("");
     var spanRef = $(".input span");
     var selectRef = $(".input .select");
+
+    // load entity selector
+    loadEntitySelector();
 
     globalFields.forEach(field => {
         queryFields[field.fieldname] = field.values[0];
