@@ -922,7 +922,7 @@ function loadDocDataAndDocList(id) {
     var docListDiv = $(".doclist");
     var divRef = $(".empty").clone().removeClass("empty");
     var docDiv = appendToDocList(divRef, appDataJsonObj, docListDiv);
-    docListDiv.children("label").after(docDiv);
+    docListDiv.children("span").after(docDiv);
     docListDiv.children().css("background-color", "");
     docDiv.css("background-color", "rgb(220, 220, 220);");
 }
