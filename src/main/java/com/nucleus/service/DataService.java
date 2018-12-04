@@ -407,17 +407,21 @@ public class DataService {
     // check duplicate primary fields
     Map<String, Object> primaryFieldsValue = getPrimaryFieldsValueMap(meta, entity, doc);
 
+    // ensure indexing on primary and global fields
+    String collectionName = getCollectionName(client, entity);
+    databaseAdapter.index(primaryFieldsValue.keySet(), collectionName);
+
     Bson query = QueryService.getQuery(primaryFieldsValue);
-    List<Map<String, Object>> response = databaseAdapter.get(query, getCollectionName(client, entity));
+    List<Map<String, Object>> response = databaseAdapter.get(query, collectionName);
     if (!response.isEmpty()) {
       throw new NucleusException("These primary field values already exists.");
     }
 
     Document document = new Document(doc);
     if (associationUpdates.isEmpty()) {
-      return databaseAdapter.create(document, getCollectionName(client, entity));
+      return databaseAdapter.create(document, collectionName);
     }
-    return databaseAdapter.create(document, getCollectionName(client, entity), associationUpdates, client);
+    return databaseAdapter.create(document, collectionName, associationUpdates, client);
   }
 
 

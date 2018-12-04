@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
@@ -23,6 +24,8 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.DeleteManyModel;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.IndexModel;
+import com.mongodb.client.model.Indexes;
 import com.mongodb.client.model.InsertOneModel;
 import com.mongodb.client.model.Projections;
 import com.mongodb.client.model.UpdateOneModel;
@@ -76,6 +79,22 @@ public class DatabaseAdapter {
       collectionsMap.put(collectionName, db.getCollection(collectionName));
     }
     return collectionsMap.get(collectionName);
+  }
+
+
+  /*-----Indexing-----*/
+
+  /**
+   * Index the fields.
+   */
+  public boolean index(Set<String> fields, String collectionName) {
+    List<IndexModel> indexes = new ArrayList<>();
+    fields.forEach(field -> {
+      IndexModel index = new IndexModel(Indexes.ascending(field));
+      indexes.add(index);
+    });
+    List<String> indexesList = getCollection(collectionName).createIndexes(indexes);
+    return indexesList.size() == fields.size() ? true : false;
   }
 
 
