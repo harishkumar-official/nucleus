@@ -4,12 +4,12 @@
     <img class="login" title="Login" height="70%" th:src="@{/images/icon-login.png}" style="float:right; cursor:pointer; display:none">
 
     <div class="toolbar" style="float:right; display:none">
-        <span class="localization" style="display:inline-block"></span>
         <span class="environment" th:if="${environments} != null" style="display:inline-block"></span>
+        <span class="localization" style="display:inline-block"></span>
         <button class="create">Create</button>
         <span class="metabuttons" th:if="${metadata} != null" style="display:inline-block">
-            <button class="metadata" th:if="${appdata} != null">Metadata</button>
-            <button class="appdata" th:if="${appdata} == null">Appdata</button>
+            <button class="metadata" th:if="${showMetaButton} == true">Metadata</button>
+            <button class="appdata" th:if="${showAppButton} == true">Appdata</button>
         </span>
         <span class="client" th:text="${client}"></span>
 
@@ -26,15 +26,4 @@
     $(".logo").click(function () {
         window.location.href = "/ui";
     });
-
-    /* $(".client").click(function (e) {
-        var menu = $(".menu");
-        if (menu.is(":visible")) {
-            $(".menu").hide();
-            $(".metadata, .environment, .localization").slideDown(200);
-        } else {
-            $(".metadata, .environment, .localization").hide();
-            $(".menu").slideDown(200);
-        }
-    }); */
 </script>

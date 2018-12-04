@@ -135,12 +135,8 @@ public class UiController {
    */
   @RequestMapping(value = "/metadata", method = RequestMethod.GET)
   public String metadata(ModelMap model, @RequestParam String client) {
-    List<Map<String, Object>> metadatas = dataService.getMetaData(client, null);
-    List<String> localizations = new ArrayList<>();
-
-    model.put("metadata", mapMetaData(metadatas, localizations));
-    model.put("localizations", localizations);
-    model.put("client", client);
+    addDataInModel(model, client);
+    model.put("showAppButton", true);
     return "metadata";
   }
 
@@ -148,22 +144,22 @@ public class UiController {
    * Returns meta-client app-data html.
    */
   @RequestMapping(value = "/appdata", method = RequestMethod.GET)
-  public ModelAndView appdata(ModelMap model, @RequestParam String client) {
+  public String appdata(ModelMap model, @RequestParam String client) {
+    addDataInModel(model, client);
+    model.put("showMetaButton", true);
+    return "appdata";
+  }
+
+  private void addDataInModel(ModelMap model, String client) {
     List<Map<String, Object>> metadatas = dataService.getMetaData(client, null);
     if (metadatas == null) {
       throw new NucleusException("Invalid Client");
     }
 
-    try {
-      List<String> localizations = new ArrayList<>();
-      model.put("metadata", mapMetaData(metadatas, localizations));
-      model.put("localizations", localizations);
-      model.put("client", client);
-    } catch (Exception e) {
-      return redirect(model, client, true);
-    }
-
-    return new ModelAndView("appdata");
+    List<String> localizations = new ArrayList<>();
+    model.put("metadata", mapMetaData(metadatas, localizations));
+    model.put("localizations", localizations);
+    model.put("client", client);
   }
 
   /**
@@ -171,8 +167,10 @@ public class UiController {
    */
   @RequestMapping(value = "/simpledata", method = RequestMethod.GET)
   public String simpledata(ModelMap model, @RequestParam String client) {
-    List<Map<String, Object>> data = null;
-    data = dataService.getJson(client, null, null, null);
+    List<Map<String, Object>> data = dataService.getJson(client, null, null, null);
+    if (data == null) {
+      throw new NucleusException("Invalid Client");
+    }
     Set<String> environments = new HashSet<>();
     Set<String> localizations = new HashSet<>();
 

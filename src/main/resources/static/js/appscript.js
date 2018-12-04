@@ -527,6 +527,7 @@ function populateFields(fields, parentDiv, parentId, index, allowOnlyPrimary) {
         if (allow) {
             var fieldname = field.fieldname;
             var displayname = field.displayname;
+            var description = field.description;
             var fieldtype = field.type;
             var subtype = field.subtype;
             var div = $(".empty").clone().removeClass("empty").addClass("field");
@@ -535,7 +536,7 @@ function populateFields(fields, parentDiv, parentId, index, allowOnlyPrimary) {
             if (field.required == true) {
                 required = "<label style='padding-left:2px; color:red'>*<label>";
             }
-            div.append(inputRef.children("span").clone().append(displayname + required).addClass("displayname"));
+            div.append(inputRef.children("span").clone().append(displayname + required).addClass("displayname").attr("title", description));
             div.append(inputRef.children("span").clone().append(fieldtype + " ").addClass("fieldtype"));
             if (subtype) {
                 div.append(inputRef.children("span").clone().append(subtype + " ").addClass("subtype"));
