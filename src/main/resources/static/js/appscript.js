@@ -731,6 +731,9 @@ function populatePrimaryFields(fields, mainDiv) {
 
 var primaryFields = [];
 function populateMetadata() {
+    // empty entity association map to refill again 
+    entityDocSelectMap = new Object();
+
     var mainDiv = $(".docdata").text("")
     mainDiv.append("<label>Primary Fields</label>");
 
@@ -818,6 +821,10 @@ function loadGlobalFields(globalFields) {
                 var fieldname = $(this).attr("name");
                 var value = $(this).val();
                 queryFields[fieldname] = value;
+
+                // Populate metadata
+                populateMetadata();
+
                 // Populate doclist
                 populateDoclist();
             }
