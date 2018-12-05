@@ -159,7 +159,20 @@
 		});
 
 		// load global fields
+		var tempQueryFields = queryFields;
 		loadGlobalFields(currentMetadata.global_fields);
+
+		// changing the global fields values to the currently selected ones after localization reloading
+		if(tempQueryFields){
+			queryFields = tempQueryFields;
+			$.each($(".global_fields select"), function(){
+				var name = $(this).attr("name");
+				if(name){
+					$(this).val(queryFields[name]);
+					$(this).selectmenu("refresh");
+				}
+			});
+		}
 
 		// Populate metadata
 		populateMetadata();
