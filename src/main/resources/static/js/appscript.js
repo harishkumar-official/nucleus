@@ -186,7 +186,6 @@ function assignBackground(div, index) {
     }
 }
 
-var number = ["integer",]
 function cast(fullFieldName, fieldValue, fieldtype, subtype) {
     fieldtype = fieldtype.trim();
     fieldValue = fieldValue.trim();

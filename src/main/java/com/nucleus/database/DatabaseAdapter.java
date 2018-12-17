@@ -200,7 +200,7 @@ public class DatabaseAdapter {
     }
     BulkWriteResult result = getCollection(CollectionName.association.name()).bulkWrite(requests);
     NucleusLogger.info("Updated " + result.getModifiedCount() + " association docs.", this.getClass());
-    return (result.getModifiedCount() > 0) ? result.getModifiedCount() : result.getInsertedCount();
+    return result.getModifiedCount() > 0 ? result.getModifiedCount() : result.getInsertedCount();
   }
 
   private void updateWriteRequests(List<WriteModel<Document>> requests, AssociationUpdates associationUpdate,
@@ -269,7 +269,7 @@ public class DatabaseAdapter {
     for (String field : deletes.keySet()) {
       Object value = deletes.get(field);
       if (value instanceof List) {
-        for (Object val : ((List) value)) {
+        for (Object val : (List) value) {
           deletesBson.add(Updates.pull(field, val));
           addDeletedSerials(field, val, deletedSerialMap);
         }

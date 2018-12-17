@@ -2,7 +2,7 @@ package com.nucleus.logger;
 
 import org.apache.logging.log4j.LogManager;
 
-public class NucleusLogger {
+public final class NucleusLogger {
 
   private static final String LOGGER_NAME = "TraceLogger";
 

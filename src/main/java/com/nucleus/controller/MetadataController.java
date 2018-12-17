@@ -3,7 +3,6 @@ package com.nucleus.controller;
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,7 +16,6 @@ import com.nucleus.transientmodel.MetadataUpdateRequest;
 import io.swagger.annotations.Api;
 
 @RestController
-@CrossOrigin("*")
 @RequestMapping("v1/metadata")
 @Api(tags = "Metadata", description = "meta-data operations")
 public class MetadataController {

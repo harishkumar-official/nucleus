@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,7 +19,6 @@ import com.nucleus.transientmodel.JsonUpdateRequest;
 import io.swagger.annotations.Api;
 
 @RestController
-@CrossOrigin("*")
 @RequestMapping("v1/client")
 @Api(tags = "Client", description = "client operations with free-form json capability")
 public class ClientJsonController {

@@ -9,7 +9,7 @@ import org.springframework.util.StringUtils;
 import com.mongodb.client.model.Filters;
 import com.nucleus.constants.Fields;
 
-public class QueryService {
+public final class QueryService {
 
   private QueryService() {}
 

@@ -7,7 +7,6 @@ import java.util.stream.Collectors;
 import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,7 +23,6 @@ import com.nucleus.transientmodel.UpdateRequest;
 import io.swagger.annotations.Api;
 
 @RestController
-@CrossOrigin("*")
 @RequestMapping("v1/client")
 @Api(tags = "Meta Client", description = "client operations with meta-data capability")
 public class ClientController {

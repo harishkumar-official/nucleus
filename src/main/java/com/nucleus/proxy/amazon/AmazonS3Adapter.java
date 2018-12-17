@@ -1,8 +1,10 @@
 package com.nucleus.proxy.amazon;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Date;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -38,9 +40,9 @@ public class AmazonS3Adapter implements IAmazonS3Adapter {
 
   private File convertMultiPartToFile(MultipartFile file) throws IOException {
     File convFile = new File(file.getOriginalFilename());
-    FileOutputStream fos = new FileOutputStream(convFile);
-    fos.write(file.getBytes());
-    fos.close();
+    OutputStream os = Files.newOutputStream(Paths.get(file.getOriginalFilename()));
+    os.write(file.getBytes());
+    os.close();
     return convFile;
   }
 
