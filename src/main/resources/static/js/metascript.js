@@ -506,7 +506,7 @@ function updateField(elem, newElem, updateObject, tableTbody) {
 function checkPrimaryKey(row, tbody) {
 	var elem = row.children(".fieldlevel");
 	var fieldlevel = elem.children("select").val();
-	if (fieldlevel == "primary") {
+	if (fieldlevel == "primary" || fieldlevel == "query") {
 		var id = $('.FieldTable:visible').attr("id");
 		if (id.includes("-fields-")) {
 			$(elem).append("<span style='color:red'><br>Invalid Inside Object</span>");
@@ -516,6 +516,12 @@ function checkPrimaryKey(row, tbody) {
 		var fieldtype = row.children(".type").children("select").val();
 		if (fieldtype == "object" || typesName.hasOwnProperty(fieldtype) || entitiesName.hasOwnProperty(fieldtype)) {
 			$(elem).append("<span style='color:red'><br>Invalid for Object types</span>");
+			$(elem).children().focus();
+			return false;
+		}
+		var subtype = row.children(".subtype").children("select").val();
+		if (subtype == "object" || typesName.hasOwnProperty(subtype) || entitiesName.hasOwnProperty(subtype)) {
+			$(elem).append("<span style='color:red'><br>Invalid for Object subtypes</span>");
 			$(elem).children().focus();
 			return false;
 		}
@@ -542,6 +548,9 @@ function populateAddButton(name, tableRef) {
 			var fieldname = $(elem).attr("class");
 			setElementInput(elem, fieldname);
 		});
+		if (!id || id.includes("type_definitions-") || id.includes("-fields-")) {
+			addTable.find(".fieldlevel").hide();
+		}
 		if (id == "global_fields") {
 			addTable.find("td.type").children("select").attr("disabled", "disabled").val("enum");
 		}
@@ -572,7 +581,7 @@ function populateAddButton(name, tableRef) {
 		} else {
 			newRow = tableRef.find('tbody tr').clone();
 		}
-		
+
 		var errorFlag = false;
 
 		var updateObject = new Object();

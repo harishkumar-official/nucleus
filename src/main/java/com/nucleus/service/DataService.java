@@ -3,6 +3,7 @@ package com.nucleus.service;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -29,6 +30,7 @@ public class DataService {
 
   private static final String SEMI_COLON = ":";
   private static final String COMMA = ",";
+  private static final String DOT = "\\.";
 
   private AmazonS3Adapter amazonS3Adapter;
   private DatabaseAdapter databaseAdapter;
@@ -197,9 +199,38 @@ public class DataService {
     Map<String, Object> updatesToSet = (Map<String, Object>) data.get(0);
     List<Document> arrayFilters = (List<Document>) data.get(1);
 
+    indexQueryFields(updates, meta);
+
     Bson query = QueryService.getQuery(ids);
     Long updatedCount = databaseAdapter.addInArray(query, updatesToSet, arrayFilters, CollectionName.metadata.name());
     return checkSuccess(ids.size(), updatedCount.intValue());
+  }
+
+  private void indexQueryFields(Map<String, Object> updates, Metadata meta) {
+    Map<Integer, Set<String>> entityFieldsMapToIndex = new HashMap<>();
+    updates.forEach((key, value) -> {
+      if (key.startsWith(Fields.ENTITIES) && key.contains(Fields.FIELDS)) {
+        List<Object> fieldsObject = (List<Object>) value;
+        fieldsObject.forEach(field -> {
+          String fieldLevel = (String) ((Map) field).get(Fields.FIELD_LEVEL);
+          if (fieldLevel.equals(FieldLevel.query.name())) {
+            String fieldName = (String) ((Map) field).get(Fields.FIELD_NAME);
+            Integer entitySerial = Integer.parseInt(key.split(DOT)[1]);
+            if (!entityFieldsMapToIndex.containsKey(entitySerial)) {
+              entityFieldsMapToIndex.put(entitySerial, new HashSet<>());
+            }
+            entityFieldsMapToIndex.get(entitySerial).add(fieldName);
+          }
+        });
+      }
+    });
+
+    if (!entityFieldsMapToIndex.isEmpty()) {
+      entityFieldsMapToIndex.forEach((key, value) -> {
+        Entity entity = meta.getEntities().stream().filter(e -> e.getSerial() == key).findFirst().orElse(null);
+        databaseAdapter.index(value, getCollectionName(meta.getClient(), entity.getEntityName()));
+      });
+    }
   }
 
   public boolean deleteInMetaArray(List<String> ids, String client, Integer existingMaxSerial,
@@ -371,7 +402,7 @@ public class DataService {
     }
     if (!((List) data.get(0)).isEmpty()) {
       Long assDeleteCount = databaseAdapter.deleteAssociations(ids, (List) data.get(0)).longValue();
-      docDeleteCount = (assDeleteCount > 0) ? assDeleteCount : docDeleteCount;
+      docDeleteCount = assDeleteCount > 0 ? assDeleteCount : docDeleteCount;
     }
     return docDeleteCount;
   }
