@@ -18,10 +18,12 @@ import com.nucleus.exception.NucleusException;
 import com.nucleus.metadata.AssociationType;
 import com.nucleus.metadata.Entity;
 import com.nucleus.metadata.Field;
+import com.nucleus.metadata.FieldLevel;
 import com.nucleus.metadata.Metadata;
 import com.nucleus.metadata.PrimaryType;
 import com.nucleus.metadata.TypeDefinition;
 import com.nucleus.transientmodel.AssociationUpdates;
+import org.springframework.util.StringUtils;
 
 @Service
 @SuppressWarnings({"rawtypes", "unchecked"})
@@ -74,13 +76,12 @@ public class MetadataService {
       int entitySize = meta.getEntities().size();
       List<Map<String, Object>> entities = (List<Map<String, Object>>) newMeta.get(Fields.ENTITIES);
       if (entities != null) {
-        for (int i = 0; i < entities.size(); i++) {
-          Map<String, Object> newEntity = entities.get(i);
+        for (Map<String, Object> newEntity: entities) {
           String entityName = (String) newEntity.get(Fields.ENTITY_NAME);
-          Entity existingEntity = null;
+          validatePrimaryFields((List<Map<String, Object>>) newEntity.get(Fields.FIELDS));
           if (entityName == null) {
             Integer serial = (Integer) newEntity.get(Fields.SERIAL);
-            existingEntity =
+            Entity existingEntity =
                 meta.getEntities().stream().filter(en -> en.getSerial().equals(serial)).findFirst().orElse(null);
             if (existingEntity == null) {
               throw new NucleusException("Entity with serial'" + serial + "' doesn't exists.");
@@ -89,14 +90,9 @@ public class MetadataService {
                   (List<Map<String, Object>>) newEntity.get(Fields.FIELDS));
             }
           } else {
-            existingEntity = meta.getEntities().stream().filter(en -> en.getEntityName().equals(entityName)).findFirst()
-                .orElse(null);
-            if (existingEntity == null) {
-              validateAllowedName(entityName);
-              newEntity.put(Fields.SERIAL, ++entitySize);
-            } else {
-              throw new NucleusException("Entity '" + entityName + "' already exists.");
-            }
+            validateUniqueName(meta, entityName);
+            validateAllowedName(entityName);
+            newEntity.put(Fields.SERIAL, ++entitySize);
           }
         }
       }
@@ -108,30 +104,61 @@ public class MetadataService {
       int typeSize = meta.getTypeDefinitions().size();
       List<Map<String, Object>> typeDefinitions = (List<Map<String, Object>>) newMeta.get(Fields.TYPE_DEFINITIONS);
       if (typeDefinitions != null) {
-        for (int i = 0; i < typeDefinitions.size(); i++) {
-          Map<String, Object> newType = typeDefinitions.get(i);
+        for (Map<String, Object> newType: typeDefinitions) {
           String typeName = (String) newType.get(Fields.TYPE_NAME);
-          TypeDefinition existingType = null;
+          validateTypeDefinitionFields(meta, (List<Map<String, Object>>) newType.get(Fields.FIELDS));
           if (typeName == null) {
             Integer serial = (Integer) newType.get(Fields.SERIAL);
-            existingType =
+            TypeDefinition existingType =
                 meta.getTypeDefinitions().stream().filter(en -> en.getSerial().equals(serial)).findFirst().orElse(null);
             if (existingType == null) {
-              throw new NucleusException("Entity with serial'" + serial + "' doesn't exists.");
+              throw new NucleusException("Type with serial'" + serial + "' doesn't exists.");
             } else {
               validateMetaFields(existingType.getTypeName(), existingType.getFields(),
                   (List<Map<String, Object>>) newType.get(Fields.FIELDS));
             }
           } else {
-            existingType = meta.getTypeDefinitions().stream().filter(ty -> ty.getTypeName().equals(typeName))
-                .findFirst().orElse(null);
-            if (existingType == null) {
-              validateAllowedName(typeName);
-              newType.put(Fields.SERIAL, ++typeSize);
-            } else {
-              throw new NucleusException("Type '" + typeName + "' already exists.");
-            }
+            validateUniqueName(meta, typeName);
+            validateAllowedName(typeName);
+            newType.put(Fields.SERIAL, ++typeSize);
           }
+        }
+      }
+    }
+  }
+
+  private boolean validateUniqueName(Metadata meta, String name) {
+    boolean isNotInTypeDefinitions = meta.getTypeDefinition(name) == null;
+    boolean isNotInEntities = meta.getEntity(name) == null;
+    if (isNotInTypeDefinitions && isNotInEntities) {
+      return true;
+    } else if (isNotInTypeDefinitions) {
+      throw new NucleusException("Entity with name '" + name + "' already exists.");
+    }
+    throw new NucleusException("Type with name '" + name + "' already exists.");
+  }
+
+  private void validatePrimaryFields(List<Map<String, Object>> newFields) {
+    if (newFields != null) {
+      for (Map<String, Object> field : newFields) {
+        String fieldLevel = (String) field.get(Fields.FIELD_LEVEL);
+        String type = (String) field.get(Fields.TYPE);
+        String subType = (String) field.get(Fields.SUB_TYPE);
+        if (FieldLevel.primary.name().equals(fieldLevel)
+            && (!isFieldTypeForPrimaryLevel(type) || StringUtils.hasLength(subType))) {
+          throw new NucleusException("Allowed Primary fields are [\"string\", \"number\"]");
+        }
+      }
+    }
+  }
+
+  private void validateTypeDefinitionFields(Metadata meta, List<Map<String, Object>> newFields) {
+    if (newFields != null) {
+      for (Map<String, Object> field : newFields) {
+        String type = (String) field.get(Fields.TYPE);
+        String subType = (String) field.get(Fields.SUB_TYPE);
+        if (meta.getEntity(type) != null) {
+          throw new NucleusException("Type definitions can't have Entity as a field");
         }
       }
     }
@@ -140,8 +167,7 @@ public class MetadataService {
   private void validateMetaFields(String name, List<Field> existingSubFields, List<Map<String, Object>> newSubFields) {
     if (newSubFields != null && existingSubFields != null) {
       int fieldsSize = existingSubFields.size();
-      for (int i = 0; i < newSubFields.size(); i++) {
-        Map<String, Object> newSubField = newSubFields.get(i);
+      for (Map<String, Object> newSubField: newSubFields) {
         Field existingSubField = null;
         String fieldName = (String) newSubField.get(Fields.FIELD_NAME);
         if (fieldName == null) {
@@ -333,6 +359,19 @@ public class MetadataService {
       }
     }
     return value;
+  }
+
+  private boolean isFieldTypeForPrimaryLevel(String fieldType) {
+    switch (fieldType) {
+      case PrimaryType.STRING:
+      case PrimaryType.FLOAT:
+      case PrimaryType.DOUBLE:
+      case PrimaryType.INTEGER:
+      case PrimaryType.LONG:
+        return true;
+      default:
+        return false;
+    }
   }
 
   private Object cast(Object value, String fieldType, Field field, Metadata meta,

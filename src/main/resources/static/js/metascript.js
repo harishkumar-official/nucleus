@@ -709,7 +709,7 @@ function updateUI(newRow, name) {
 		$('.explorer .entities ul:first').append(li);
 		var fieldsTableDiv = populateFields([], li, id);
 		assignClick(li, newRow, true, fieldsTableDiv)
-		updateTypeSelect(entityname, displayName);
+		updateTypeSelect(entityname, displayName, true);
 		entitiesName[entityname] = displayName;
 	} else if (name == "Type") {
 		var typename = newRow.children('.typename').text();
@@ -720,16 +720,18 @@ function updateUI(newRow, name) {
 		$('.explorer .type_definitions ul:first').append(li);
 		var fieldsTableDiv = populateFields([], li, id);
 		assignClick(li, newRow, false, fieldsTableDiv)
-		updateTypeSelect(typename, displayName);
+		updateTypeSelect(typename, displayName, false);
 		typesName[typename] = displayName;
 	}
 }
 
-function updateTypeSelect(name, displayName) {
+function updateTypeSelect(name, displayName, isEntityType) {
 	var selectOption = $(".input .type option").clone()[0];
 	selectOption = $(selectOption).text(displayName).val(name);
 	$('.input .type').append(selectOption);
-	$('.input .subtype').append(selectOption.clone());
+	if(!isEntityType){
+	    $('.input .subtype').append(selectOption.clone());
+	}
 }
 
 function populateButtons() {
@@ -900,6 +902,7 @@ function populateCreateButton() {
 	fieldset.append(label).append(input);
 
 	var button = $(".toolbar .create");
+    button.text("Create Locale")
 	button.click(function () {
 		dialog.dialog("open");
 	});

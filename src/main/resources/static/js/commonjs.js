@@ -34,7 +34,7 @@ function loadToolbar(client, isMetaClient, localizations, environments) {
 
     // localization
     if (localizations) {
-        var localizationSpan = $(".toolbar .localization");
+        var localizationSpan = $(".localization");
         localizationSpan.show();
         var select = selectRef.clone().removeClass("select").show();
         var optionRef = select.children("option").remove();

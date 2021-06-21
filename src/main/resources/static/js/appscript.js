@@ -288,20 +288,24 @@ function assignToggle(div, inputRef) {
     if (div.children(".expand").size() == 0) {
         expand = inputRef.children("span").clone().append("+").addClass("expand");
         expand.attr("title", "Expand All");
-        expand.attr("style", expand.attr("style") + ";float:right; cursor:pointer; text-align:right;");
-        $(div.children("div")[0]).before(expand);
+        expand.attr("style", expand.attr("style") + ";float:left; cursor:pointer; text-align:left; width:10px");
+        $(div.children("span")[0]).before(expand);
     } else {
         expand = div.children(".expand");
     }
     expand.unbind('click');
     expand.click(function () {
         var text = $(this).text();
+        var fields = div.find(".field");
+        var expandSpans = fields.children(".expand");
         if (text == "+") {
-            div.find(".field").slideDown(200);
-            $(this).text("−");
+            fields.slideDown(200);
+            updateExpandSpan(expand, false);
+            updateExpandSpan(expandSpans, false);
         } else {
-            div.find(".field").slideUp(200);
-            $(this).text("+");
+            fields.slideUp(200);
+            updateExpandSpan(expand, true);
+            updateExpandSpan(expandSpans, true);
         }
     });
 
@@ -309,41 +313,47 @@ function assignToggle(div, inputRef) {
     span.css("cursor", "pointer");
     span.unbind('click');
     span.click(function () {
-        var content = div.children(".field:visible");
-        if (content.size() == 0) {
+        var text = $(this).siblings(".expand").text()
+        if (text == "+") {
             div.children(".field").slideDown(200);
+            updateExpandSpan(expand, false);
         } else {
-            div.find(".field").slideUp(200);
-            expand.text("+");
+            div.children(".field").slideUp(200);
+            updateExpandSpan(expand, true);
         }
     });
     div.children(".field").hide();
 }
 
-function assignArrayElementRemove(removeSpan, arrayEntry, isEntityType) {
+function updateExpandSpan(elem, open){
+    if(open){
+        elem.text("+");
+        elem.attr("title", "Expand All");
+    }else{
+        elem.text("−");
+        elem.attr("title", "Collapse All");
+    }
+}
+
+function assignArrayElementRemove(removeSpan, arrayEntry) {
     removeSpan.click(function () {
         // call array element remove API
         var serial = parseInt($(this).siblings(".serial").text());
-        var fieldname = $(this).parent().parent().attr("id");
-        var childs = $(this).parent().parent().children(".field");
+        var parent = $(this).parent().parent();
+        var fieldname = parent.attr("id");
+        var childs = parent.children(".field");
         var elem = $(this).siblings("select, input");
-        var elemValue = elem.val().trim();
+        if(elem.length == 0){
+            elem = $(this).siblings("div").children("select, input")
+        }
 
         if ((elem.is("select") && !elem.attr("disabled")) || (elem.is("input") && !elem.attr("readonly"))) {
             return false;
         }
 
-        if (isEntityType && elemValue == "") {
-            shiftArrayElementsSerial(childs, serial);
-            arrayEntry.remove();
-            return true;
-        }
-
         var fieldvalue = new Object();
         fieldvalue["serial"] = serial;
-        if (isEntityType && elemValue != "") {
-            fieldvalue["value"] = elemValue;
-        }
+
         var arraySize = parseInt(childs.last().children(".serial").text().trim());
         var response = deleteInAppData(fieldname, fieldvalue, arraySize);
         if (response) {
@@ -434,7 +444,10 @@ function populateInput(i, div, inputRef, fieldId, fieldtype, subtype, enumValues
 
             // call array add API and add just serial in the DB
             var isEntityType = entityMap.hasOwnProperty(subtype);
-            if (addApiEnabled == true && !isEntityType) {
+            if(isEntityType){
+                return false;
+            }
+            if (addApiEnabled) {
                 var addElem = new Object();
                 addElem["serial"] = serial;
                 var success = addInAppData(fieldId, addElem);
@@ -470,7 +483,7 @@ function populateInput(i, div, inputRef, fieldId, fieldtype, subtype, enumValues
                 var entryInput = populateInput(i + 1, newArrayEntry, inputRef, newFieldId, subtype, null, enumValues, subFields, null);
                 newArrayEntry.attr("id", newFieldId + "-" + "value"); // for non object array elements
                 newArrayEntry.append(entryInput);
-                assignEdit(newArrayEntry, entryInput, isEntityType);
+                assignEdit(newArrayEntry, entryInput, false);
                 newArrayEntry.append(removeSpan);
                 serialSpan.css("width", "170px");
                 removeSpan.css("margin-left", "175px");
@@ -478,7 +491,7 @@ function populateInput(i, div, inputRef, fieldId, fieldtype, subtype, enumValues
                 assignBackground(newArrayEntry, i);
             }
             div.append(newArrayEntry);
-            assignArrayElementRemove(removeSpan, newArrayEntry, isEntityType);
+            assignArrayElementRemove(removeSpan, newArrayEntry);
 
             assignToggle(div, inputRef);
             div.children(".field").show();
@@ -564,7 +577,9 @@ function populateFields(fields, parentDiv, parentId, index, allowOnlyPrimary) {
             assignBackground(div, i);
             div.show();
             parentDiv.append(div);
-            i = i + 1;
+
+            //to segregate fields background color hierarchically or alternately
+            //i = i + 1;
         }
     });
 }
@@ -756,6 +771,7 @@ function populateMetadata() {
         input.removeAttr("style").removeAttr("readonly").removeAttr("disabled");
         input.attr("name", field.fieldname);
         input.attr("fieldtype", field.type);
+        input.attr("style", "width:100%");
         fieldset.append(label).append(input);
     });
 
@@ -777,6 +793,7 @@ function loadEntitySelector() {
     });
     select.removeAttr("disabled");
     var span = spanRef.clone().append("<label>Entity</label>").append(select.show())
+    span.attr("class", "global_field")
     div.append(span);
 
     entity = select.val();
@@ -795,11 +812,15 @@ function loadEntitySelector() {
 }
 
 var queryFields;
-function loadGlobalFields(globalFields) {
+function loadGlobalFields(globalFields, localizationSpan) {
     queryFields = new Object();
-    var div = $(".global_fields").text("");
+    var div = $(".global_fields");
     var spanRef = $(".input span");
     var selectRef = $(".input .select");
+
+    //move localization inside global fields filter
+    div.children(".global_field").remove()
+    div.append(localizationSpan);
 
     // load entity selector
     loadEntitySelector();
@@ -814,6 +835,7 @@ function loadGlobalFields(globalFields) {
         select.attr("name", field.fieldname);
         select.removeAttr("disabled");
         var span = spanRef.clone().append("<label>" + field.displayname + "</label>").append(select.show())
+        span.attr("class", "global_field")
         div.append(span);
         select.selectmenu({
             change: function () {
@@ -837,7 +859,13 @@ function loadGlobalFields(globalFields) {
     $(".docdata").css("height", height);
 
     // populate create button
-    var button = $(".toolbar .create");
+    var button = $(".create");
+    button.text("Create Doc")
+    button.attr("style", "width: 160px; height: 29px; margin-left: 44px; margin-right: 44px; margin-top: 20px;");
+    var div = $(".empty").clone().removeClass("empty");
+    div.attr("style", "float: left;")
+    div.append(button);
+    $(".main").prepend(div);
     button.click(function () {
         dialog.dialog("open");
     });
@@ -849,7 +877,7 @@ function appendFilter(div) {
     div.append("<span style='color:grey'></span>");
     var span = div.children("span");
     span.append("<label>Documents</label>");
-    span.append("<label class='filter' style='float:right;cursor:pointer;margin-right:4px'>" + outwards + "</label>");
+    /*span.append("<label class='filter' style='float:right;cursor:pointer;margin-right:4px'>" + outwards + "</label>");
 
     $(".global_fields").hide();
     span.children(".filter").click(function () {
@@ -861,7 +889,7 @@ function appendFilter(div) {
             $(".global_fields").toggle("slide");
             $(this).text(outwards);
         }
-    });
+    });*/
 }
 
 function populateDoclist() {
@@ -900,8 +928,16 @@ function appendToDocList(divRef, data, docListDiv) {
 
 var appDataJsonObj;
 function loadDocData(id) {
-    // reset/clean all values before populating again
+    // reset or clean all values before populating again
     $("input:not(input[type=button]), select:not(.global_fields select, .navigator select)").val("");
+
+    // to collapse all expands on doc elem change
+    $(".docdata").find(".expand").each( function(index, elem) {
+        var text = elem.textContent;
+        if (text != "+") {
+            elem.click();
+        }
+    });
 
     // get doc-data
     appDataJsonObj = getDocdata(id);

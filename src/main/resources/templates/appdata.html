@@ -27,6 +27,8 @@
 		.global_fields>span {
 			margin-left: 3px;
 			margin-top: 8px;
+			width: 185px;
+			overflow: hidden;
 		}
 
 		.primary {
@@ -58,12 +60,8 @@
 		}
 
 		.global_fields {
-			position: absolute;
-			top: 50px;
 			background-color: rgb(200, 200, 200);
-			left: 0px;
-			width: 190px;
-			height: 100%;
+			height: 50px;
 		}
 	</style>
 </head>
@@ -146,6 +144,21 @@
 	// load navigator
 	loadToolbar(client, true, localizations, null);
 
+	// on localization value change
+	var localizationSpan = $(".localization");
+	localizationSpan.prepend("<label>View Locale</label>")
+	localizationSpan.children("select").selectmenu({
+		change: function () {
+			var localization = $(this).val();
+
+			// get metadata
+			currentMetadata = metadata[localization];
+
+			// reload data
+			load();
+		}
+	});
+
 	function load() {
 		entities = currentMetadata.entities;
 		typeDef = currentMetadata.type_definitions;
@@ -160,12 +173,12 @@
 
 		// load global fields
 		var tempQueryFields = queryFields;
-		loadGlobalFields(currentMetadata.global_fields);
+		loadGlobalFields(currentMetadata.global_fields, localizationSpan);
 
 		// changing the global fields values to the currently selected ones after localization reloading
 		if(tempQueryFields){
 			queryFields = tempQueryFields;
-			$.each($(".global_fields select"), function(){
+			$.each($(".global_fields .global_field select"), function(){
 				var name = $(this).attr("name");
 				if(name){
 					$(this).val(queryFields[name]);
@@ -183,19 +196,6 @@
 
 	// load data
 	load();
-
-	// on localization value change
-	$(".toolbar .localization select").selectmenu({
-		change: function () {
-			var localization = $(".toolbar .localization select").val();
-
-			// get metadata
-			currentMetadata = metadata[localization];
-
-			// reload data
-			load();
-		}
-	});
 
 </script>
 
