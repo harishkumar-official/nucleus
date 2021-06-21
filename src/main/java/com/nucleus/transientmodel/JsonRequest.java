@@ -31,5 +31,4 @@ public class JsonRequest {
   public void setDoc(Map<String, Object> doc) {
     this.doc = doc;
   }
-
 }

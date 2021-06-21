@@ -1,15 +1,15 @@
 <html>
 
 <head>
-	<script th:src="@{/js/jquery.min.js}"></script>
-	<script th:src="@{/js/jquery-1.12.4.js}"></script>
-	<script th:src="@{/js/jquery-ui.js}"></script>
-	<script th:src="@{/js/jquery-ui-timepicker-addon.js}"></script>
-	<script th:src="@{/js/commonjs.js}"></script>
-	<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-	<link rel="stylesheet" th:href="@{/css/jquery-ui-timepicker-addon.css}">
-	<link rel="stylesheet" th:href="@{/css/style.css}">
-	<style>
+    <script th:src="@{/js/jquery.min.js}"></script>
+    <script th:src="@{/js/jquery-1.12.4.js}"></script>
+    <script th:src="@{/js/jquery-ui.js}"></script>
+    <script th:src="@{/js/jquery-ui-timepicker-addon.js}"></script>
+    <script th:src="@{/js/commonjs.js}"></script>
+    <link href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/jquery-ui-timepicker-addon.css}">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
 		.fieldtype,
 		.subtype {
 			color: grey;
@@ -63,64 +63,66 @@
 			background-color: rgb(200, 200, 200);
 			height: 50px;
 		}
-	</style>
+
+    </style>
 </head>
 
 <body>
 
-	<div th:replace="header"></div>
+<div th:replace="header"></div>
 
-	<div class="main">
-		<div class="global_fields"></div>
-		<div class="doclist" style="width: 250px; float: left; background-color:rgb(246, 246, 246); overflow-y:scroll;"></div>
-		<div class="docdata" style=" overflow-y:scroll"></div>
-	</div>
+<div class="main">
+    <div class="global_fields"></div>
+    <div class="doclist"
+         style="width: 250px; float: left; background-color:rgb(246, 246, 246); overflow-y:scroll;"></div>
+    <div class="docdata" style=" overflow-y:scroll"></div>
+</div>
 
-	<div class="empty"></div>
-	<div class="input" style="display:none;">
-		<span style="display:inline-block; width:185px; overflow: hidden;"></span>
-		<input style="width:185px" type="text" readonly/>
-		<select style="width:185px" class="select" disabled>
-			<option value="">None</option>
-		</select>
-		<select style="width:185px" class="boolean" disabled>
-			<option value="">None</option>
-			<option value="true">True</option>
-			<option value="false">False</option>
-		</select>
-		<button style="display:none"></button>
-	</div>
+<div class="empty"></div>
+<div class="input" style="display:none;">
+    <span style="display:inline-block; width:185px; overflow: hidden;"></span>
+    <input readonly style="width:185px" type="text"/>
+    <select class="select" disabled style="width:185px">
+        <option value="">None</option>
+    </select>
+    <select class="boolean" disabled style="width:185px">
+        <option value="">None</option>
+        <option value="true">True</option>
+        <option value="false">False</option>
+    </select>
+    <button style="display:none"></button>
+</div>
 
-	<div class="edit" style="display:none;">
-		<span class="edit" title="Edit" style="display:none; padding:3px; cursor:pointer;">
+<div class="edit" style="display:none;">
+		<span class="edit" style="display:none; padding:3px; cursor:pointer;" title="Edit">
 			<img alt="edit" th:src="@{/images/icon-pencil.png}" width="12">
 		</span>
-		<span class="save" title="Save" style="display:none; padding:2px; cursor:pointer;">
+    <span class="save" style="display:none; padding:2px; cursor:pointer;" title="Save">
 			<img alt="save" th:src="@{/images/icon-checkmark.png}" width="14">
 		</span>
-		<span class="info" title="Info" style="display:none; padding:2px; cursor:pointer; margin-left: 2px">
+    <span class="info" style="display:none; padding:2px; cursor:pointer; margin-left: 2px" title="Info">
 			<img alt="info" th:src="@{/images/icon-info.png}" width="13">
 		</span>
-		<button class="add" style="display:none">Add</button>
-	</div>
+    <button class="add" style="display:none">Add</button>
+</div>
 
-	<div id="dialog-form" title="Create new document">
-		<p class="validateTips">All primary fields are required.</p>
-		<form>
-			<fieldset>
-				<!-- Allow form submission with keyboard without duplicating the dialog button -->
-				<input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
+<div id="dialog-form" title="Create new document">
+    <p class="validateTips">All primary fields are required.</p>
+    <form>
+        <fieldset>
+            <!-- Allow form submission with keyboard without duplicating the dialog button -->
+            <input style="position:absolute; top:-1000px" tabindex="-1" type="submit">
 
-				<label>Name</label>
-				<input type="text" class="ui-widget-content ui-corner-all">
-			</fieldset>
-		</form>
-	</div>
+            <label>Name</label>
+            <input class="ui-widget-content ui-corner-all" type="text">
+        </fieldset>
+    </form>
+</div>
 
 </body>
 
 <script th:src="@{/js/appscript.js}"></script>
-<script type="text/javascript" th:inline="javascript">
+<script th:inline="javascript" type="text/javascript">
 
 	var client = /*[[${client}]]*/ "";
 	var metadata = /*[[${metadata}]]*/ "";
@@ -196,6 +198,7 @@
 
 	// load data
 	load();
+
 
 </script>
 

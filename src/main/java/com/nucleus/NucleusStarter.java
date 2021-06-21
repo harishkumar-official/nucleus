@@ -10,5 +10,4 @@ public class NucleusStarter extends SpringBootServletInitializer {
   public static void main(String... args) throws Exception {
     SpringApplication.run(NucleusStarter.class, args);
   }
-
 }

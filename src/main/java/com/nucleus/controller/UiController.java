@@ -1,11 +1,8 @@
 package com.nucleus.controller;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import com.nucleus.constants.Fields;
+import com.nucleus.exception.NucleusException;
+import com.nucleus.service.DataService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
@@ -15,10 +12,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
-import com.nucleus.constants.Fields;
-import com.nucleus.exception.NucleusException;
-import com.nucleus.service.DataService;
 import springfox.documentation.annotations.ApiIgnore;
+
+import java.util.*;
 
 @ApiIgnore
 @Controller
@@ -32,11 +28,12 @@ public class UiController {
     this.dataService = partnerService;
   }
 
-  /**
-   * Returns login page.
-   */
+  /** Returns login page. */
   @RequestMapping(value = "", method = RequestMethod.GET)
-  public String start(ModelMap model, @ModelAttribute("error") String error, @ModelAttribute("tab") String tab,
+  public String start(
+      ModelMap model,
+      @ModelAttribute("error") String error,
+      @ModelAttribute("tab") String tab,
       @ModelAttribute("ismeta") String ismeta) {
     model.put("error", error);
     model.put("tab", tab);
@@ -57,9 +54,7 @@ public class UiController {
     }
   }
 
-  /**
-   * Returns data page after successful login.
-   */
+  /** Returns data page after successful login. */
   @RequestMapping(value = "/login", method = RequestMethod.POST)
   public ModelAndView login(ModelMap model, @RequestParam String client) {
     if (StringUtils.isEmpty(client)) {
@@ -76,12 +71,14 @@ public class UiController {
     return new ModelAndView("redirect:/ui", model);
   }
 
-  /**
-   * Returns data page on successful client creation.
-   */
+  /** Returns data page on successful client creation. */
   @RequestMapping(value = "/signup", method = RequestMethod.POST)
-  public ModelAndView create(ModelMap model, @RequestParam String client, @RequestParam boolean metadata,
-      @RequestParam String localization, @RequestParam(required = false) String environment) {
+  public ModelAndView create(
+      ModelMap model,
+      @RequestParam String client,
+      @RequestParam boolean metadata,
+      @RequestParam String localization,
+      @RequestParam(required = false) String environment) {
     if (StringUtils.isEmpty(client) || StringUtils.isEmpty(localization)) {
       model.put("error", "Sorry, fields are missing.");
     } else if (dataService.clientExists(client)) {
@@ -130,9 +127,7 @@ public class UiController {
     return false;
   }
 
-  /**
-   * Returns meta-client meta data html.
-   */
+  /** Returns meta-client meta data html. */
   @RequestMapping(value = "/metadata", method = RequestMethod.GET)
   public String metadata(ModelMap model, @RequestParam String client) {
     addDataInModel(model, client);
@@ -140,9 +135,7 @@ public class UiController {
     return "metadata";
   }
 
-  /**
-   * Returns meta-client app-data html.
-   */
+  /** Returns meta-client app-data html. */
   @RequestMapping(value = "/appdata", method = RequestMethod.GET)
   public String appdata(ModelMap model, @RequestParam String client) {
     addDataInModel(model, client);
@@ -162,9 +155,7 @@ public class UiController {
     model.put("client", client);
   }
 
-  /**
-   * Returns simple-client app data html.
-   */
+  /** Returns simple-client app data html. */
   @RequestMapping(value = "/simpledata", method = RequestMethod.GET)
   public String simpledata(ModelMap model, @RequestParam String client) {
     List<Map<String, Object>> data = dataService.getJson(client, null, null, null);
@@ -182,36 +173,38 @@ public class UiController {
   }
 
   @SuppressWarnings("unchecked")
-  private Map<String, Object> mapSimpleData(List<Map<String, Object>> data, Set<String> environments,
-      Set<String> localizations) {
+  private Map<String, Object> mapSimpleData(
+      List<Map<String, Object>> data, Set<String> environments, Set<String> localizations) {
     Map<String, Object> envLocDataMap = new HashMap<>();
-    data.forEach(d -> {
-      String environment = (String) d.get(Fields.ENVIRONMENT);
-      String localization = (String) d.get(Fields.LOCALIZATION);
-      environments.add(environment);
-      localizations.add(localization);
+    data.forEach(
+        d -> {
+          String environment = (String) d.get(Fields.ENVIRONMENT);
+          String localization = (String) d.get(Fields.LOCALIZATION);
+          environments.add(environment);
+          localizations.add(localization);
 
-      Map<String, Object> localizationMap = null;
-      if (envLocDataMap.containsKey(environment)) {
-        localizationMap = (Map<String, Object>) envLocDataMap.get(environment);
-      } else {
-        localizationMap = new HashMap<>();
-      }
+          Map<String, Object> localizationMap = null;
+          if (envLocDataMap.containsKey(environment)) {
+            localizationMap = (Map<String, Object>) envLocDataMap.get(environment);
+          } else {
+            localizationMap = new HashMap<>();
+          }
 
-      localizationMap.put(localization, d);
-      envLocDataMap.put(environment, localizationMap);
-    });
+          localizationMap.put(localization, d);
+          envLocDataMap.put(environment, localizationMap);
+        });
     return envLocDataMap;
   }
 
-  private Map<String, Object> mapMetaData(List<Map<String, Object>> data, List<String> localizations) {
+  private Map<String, Object> mapMetaData(
+      List<Map<String, Object>> data, List<String> localizations) {
     Map<String, Object> locDataMap = new HashMap<>();
-    data.forEach(d -> {
-      String localization = (String) d.get(Fields.LOCALIZATION);
-      localizations.add(localization);
-      locDataMap.put(localization, d);
-    });
+    data.forEach(
+        d -> {
+          String localization = (String) d.get(Fields.LOCALIZATION);
+          localizations.add(localization);
+          locDataMap.put(localization, d);
+        });
     return locDataMap;
   }
 }
-

@@ -15,5 +15,4 @@ public class DeleteRequest extends UpdateRequest {
   public void setArraySize(Integer arraySize) {
     this.arraySize = arraySize;
   }
-
 }

@@ -1,19 +1,18 @@
 package com.nucleus.proxy.amazon;
 
+import com.nucleus.exception.NucleusException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Date;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-import org.springframework.web.multipart.MultipartFile;
-import com.nucleus.exception.NucleusException;
 
-/**
- * Adapter for Amazon S3 proxy.
- */
+/** Adapter for Amazon S3 proxy. */
 @Component
 public class AmazonS3Adapter implements IAmazonS3Adapter {
 

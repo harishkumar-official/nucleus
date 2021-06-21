@@ -32,5 +32,4 @@ public class AssociationUpdates {
   public void setRefEntityIdsMapList(List<Map<String, Object>> refEntityIdsMapList) {
     this.refEntityIdsMapList = refEntityIdsMapList;
   }
-
 }

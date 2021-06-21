@@ -3,7 +3,7 @@
 <head>
     <script src="../../js/jquery.min.js"></script>
     <script src="../../js/commonjs.js"></script>
-    <link rel="stylesheet" href="../../css/style.css">
+    <link href="../../css/style.css" rel="stylesheet">
     <style>
         .login_main,
         .signup_main {
@@ -39,36 +39,38 @@
         label {
             font-size: 20;
         }
+
     </style>
 </head>
 
 <body>
 
-    <div th:replace="header"></div>
+<div th:replace="header"></div>
 
-    <div class="login_main">
-        <form action="/ui/login" method="POST">
-            <label>Welcome</label>
-            <input name="client" placeholder="Client" spellcheck="false" style="margin-top: 30px;" />
-            <button>Enter</button>
-        </form>
-    </div>
+<div class="login_main">
+    <form action="/ui/login" method="POST">
+        <label>Welcome</label>
+        <input name="client" placeholder="Client" spellcheck="false" style="margin-top: 30px;"/>
+        <button>Enter</button>
+    </form>
+</div>
 
-    <div class="signup_main" style="display:none">
-        <form action="/ui/signup" method="POST">
-            <label>Ready to Join!</label>
-            <input name="client" placeholder="Client" spellcheck="false" style="margin-top: 30px;" />
-            <input name="localization" placeholder="Default Localization" spellcheck="false" style="margin-top:1px" />
-            <input name="environment" placeholder="Default Environment" spellcheck="false" style="display:none; margin-top:1px" />
-            <br>
-            <input name="metadata" type="radio" value="false" style="width:auto; margin-top:15px" />Simple
-            <input name="metadata" type="radio" value="true" style="width:auto" checked="checked" />Metadata
-            <button>Create</button>
-        </form>
-    </div>
+<div class="signup_main" style="display:none">
+    <form action="/ui/signup" method="POST">
+        <label>Ready to Join!</label>
+        <input name="client" placeholder="Client" spellcheck="false" style="margin-top: 30px;"/>
+        <input name="localization" placeholder="Default Localization" spellcheck="false" style="margin-top:1px"/>
+        <input name="environment" placeholder="Default Environment" spellcheck="false"
+               style="display:none; margin-top:1px"/>
+        <br>
+        <input name="metadata" style="width:auto; margin-top:15px" type="radio" value="false"/>Simple
+        <input checked="checked" name="metadata" style="width:auto" type="radio" value="true"/>Metadata
+        <button>Create</button>
+    </form>
+</div>
 
 </body>
-<script type="text/javascript" th:inline="javascript">
+<script th:inline="javascript" type="text/javascript">
     $(".signup").click(function () {
         $(".signup").hide();
         $(".login").show();
@@ -104,6 +106,7 @@
         var input = $("input[name=metadata][value=false]");
         input.click();
     }
+
 
 </script>
 

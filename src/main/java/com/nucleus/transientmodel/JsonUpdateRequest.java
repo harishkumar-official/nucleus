@@ -11,5 +11,4 @@ public class JsonUpdateRequest extends JsonRequest {
   public void setId(String id) {
     this.id = id;
   }
-
 }

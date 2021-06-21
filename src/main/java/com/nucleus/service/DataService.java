@@ -1,19 +1,5 @@
 package com.nucleus.service;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-import org.bson.Document;
-import org.bson.conversions.Bson;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
-import org.springframework.web.multipart.MultipartFile;
 import com.nucleus.constants.Fields;
 import com.nucleus.database.CollectionName;
 import com.nucleus.database.DatabaseAdapter;
@@ -23,6 +9,15 @@ import com.nucleus.metadata.FieldLevel;
 import com.nucleus.metadata.Metadata;
 import com.nucleus.proxy.amazon.AmazonS3Adapter;
 import com.nucleus.transientmodel.AssociationUpdates;
+import org.bson.Document;
+import org.bson.conversions.Bson;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @SuppressWarnings({"rawtypes", "unchecked"})
@@ -38,7 +33,10 @@ public class DataService {
   private AssociationService associationService;
 
   @Autowired
-  public DataService(DatabaseAdapter database, MetadataService metadataService, AmazonS3Adapter amazonS3Adapter,
+  public DataService(
+      DatabaseAdapter database,
+      MetadataService metadataService,
+      AmazonS3Adapter amazonS3Adapter,
       AssociationService associationService) {
     this.databaseAdapter = database;
     this.metadataService = metadataService;
@@ -47,7 +45,8 @@ public class DataService {
   }
 
   private void checkMandatoryField(Object field, String fieldName) {
-    if (field == null || field instanceof String && StringUtils.isEmpty(((String) field).trim())
+    if (field == null
+        || field instanceof String && StringUtils.isEmpty(((String) field).trim())
         || field instanceof Map && ((Map) field).isEmpty()) {
       throw new NucleusException("Mandatory field '" + fieldName + "' is missing.");
     }
@@ -67,19 +66,26 @@ public class DataService {
     checkMandatoryField(entity, Fields.ENTITY);
   }
 
-  private void checkMandatoryMetaUpdateFields(List<String> ids, String client, Map<String, Object> updates) {
+  private void checkMandatoryMetaUpdateFields(
+      List<String> ids, String client, Map<String, Object> updates) {
     checkMandatoryField(client, Fields.CLIENT);
     checkMandatoryField(ids, "ids");
     checkMandatoryField(updates, "updates");
   }
 
   // query-form -> field1:value1,field2:value2
-  private Map<String, Object> parseQuery(String client, String entityName, String query, Metadata meta) {
+  private Map<String, Object> parseQuery(
+      String client, String entityName, String query, Metadata meta) {
     Set<String> globalFieldsSet = meta.getGlobalFieldsSet();
-    Set<String> primaryAndQueryFields = meta.getEntity(entityName).getFields().stream()
-        .filter(field -> field.getFieldLevel() != null
-            && (field.getFieldLevel().equals(FieldLevel.primary) || field.getFieldLevel().equals(FieldLevel.query)))
-        .map(field -> field.getFieldName()).collect(Collectors.toSet());
+    Set<String> primaryAndQueryFields =
+        meta.getEntity(entityName).getFields().stream()
+            .filter(
+                field ->
+                    field.getFieldLevel() != null
+                        && (field.getFieldLevel().equals(FieldLevel.primary)
+                            || field.getFieldLevel().equals(FieldLevel.query)))
+            .map(field -> field.getFieldName())
+            .collect(Collectors.toSet());
 
     String id = null;
     Map<String, Object> keyValueMap = new HashMap<>();
@@ -100,7 +106,8 @@ public class DataService {
       }
     }
     // verify key-value map
-    List<Object> response = metadataService.convertInputUpdateToDbUpdates(keyValueMap, entityName, client, meta);
+    List<Object> response =
+        metadataService.convertInputUpdateToDbUpdates(keyValueMap, entityName, client, meta);
     Map<String, Object> verifiedKeyValueMap = (Map<String, Object>) response.get(1);
     if (id != null) {
       verifiedKeyValueMap.put(Fields.ID, id);
@@ -148,7 +155,8 @@ public class DataService {
   private void checkMetaClientExists(String client, String localization) {
     Bson query = QueryService.getQuery(client, localization);
     if (databaseAdapter.exists(query, CollectionName.metadata.name())) {
-      throw new NucleusException("Client '" + client + "' with localization '" + localization + "' already exists.");
+      throw new NucleusException(
+          "Client '" + client + "' with localization '" + localization + "' already exists.");
     }
   }
 
@@ -178,7 +186,8 @@ public class DataService {
     List<Document> arrayFilters = (List<Document>) data.get(1);
 
     Bson query = QueryService.getQuery(ids);
-    Long updatedCount = databaseAdapter.update(query, updatesToSet, arrayFilters, CollectionName.metadata.name());
+    Long updatedCount =
+        databaseAdapter.update(query, updatesToSet, arrayFilters, CollectionName.metadata.name());
     return checkSuccess(ids.size(), updatedCount.intValue());
   }
 
@@ -186,7 +195,8 @@ public class DataService {
     if (updatedCount == totalCount) {
       return true;
     } else if (updatedCount > 0 && updatedCount < totalCount) {
-      throw new NucleusException("Could update only " + updatedCount + " docs, out of " + totalCount + " docs.");
+      throw new NucleusException(
+          "Could update only " + updatedCount + " docs, out of " + totalCount + " docs.");
     }
     return false;
   }
@@ -202,39 +212,49 @@ public class DataService {
     indexQueryFields(updates, meta);
 
     Bson query = QueryService.getQuery(ids);
-    Long updatedCount = databaseAdapter.addInArray(query, updatesToSet, arrayFilters, CollectionName.metadata.name());
+    Long updatedCount =
+        databaseAdapter.addInArray(
+            query, updatesToSet, arrayFilters, CollectionName.metadata.name());
     return checkSuccess(ids.size(), updatedCount.intValue());
   }
 
   private void indexQueryFields(Map<String, Object> updates, Metadata meta) {
     Map<Integer, Set<String>> entityFieldsMapToIndex = new HashMap<>();
-    updates.forEach((key, value) -> {
-      if (key.startsWith(Fields.ENTITIES) && key.contains(Fields.FIELDS)) {
-        List<Object> fieldsObject = (List<Object>) value;
-        fieldsObject.forEach(field -> {
-          String fieldLevel = (String) ((Map) field).get(Fields.FIELD_LEVEL);
-          if (fieldLevel.equals(FieldLevel.query.name())) {
-            String fieldName = (String) ((Map) field).get(Fields.FIELD_NAME);
-            Integer entitySerial = Integer.parseInt(key.split(DOT)[1]);
-            if (!entityFieldsMapToIndex.containsKey(entitySerial)) {
-              entityFieldsMapToIndex.put(entitySerial, new HashSet<>());
-            }
-            entityFieldsMapToIndex.get(entitySerial).add(fieldName);
+    updates.forEach(
+        (key, value) -> {
+          if (key.startsWith(Fields.ENTITIES) && key.contains(Fields.FIELDS)) {
+            List<Object> fieldsObject = (List<Object>) value;
+            fieldsObject.forEach(
+                field -> {
+                  String fieldLevel = (String) ((Map) field).get(Fields.FIELD_LEVEL);
+                  if (fieldLevel.equals(FieldLevel.query.name())) {
+                    String fieldName = (String) ((Map) field).get(Fields.FIELD_NAME);
+                    Integer entitySerial = Integer.parseInt(key.split(DOT)[1]);
+                    if (!entityFieldsMapToIndex.containsKey(entitySerial)) {
+                      entityFieldsMapToIndex.put(entitySerial, new HashSet<>());
+                    }
+                    entityFieldsMapToIndex.get(entitySerial).add(fieldName);
+                  }
+                });
           }
         });
-      }
-    });
 
     if (!entityFieldsMapToIndex.isEmpty()) {
-      entityFieldsMapToIndex.forEach((key, value) -> {
-        Entity entity = meta.getEntities().stream().filter(e -> e.getSerial() == key).findFirst().orElse(null);
-        databaseAdapter.index(value, getCollectionName(meta.getClient(), entity.getEntityName()));
-      });
+      entityFieldsMapToIndex.forEach(
+          (key, value) -> {
+            Entity entity =
+                meta.getEntities().stream()
+                    .filter(e -> e.getSerial() == key)
+                    .findFirst()
+                    .orElse(null);
+            databaseAdapter.index(
+                value, getCollectionName(meta.getClient(), entity.getEntityName()));
+          });
     }
   }
 
-  public boolean deleteInMetaArray(List<String> ids, String client, Integer existingMaxSerial,
-      Map<String, Object> deletes) {
+  public boolean deleteInMetaArray(
+      List<String> ids, String client, Integer existingMaxSerial, Map<String, Object> deletes) {
     checkMandatoryMetaUpdateFields(ids, client, deletes);
 
     Metadata meta = metadataService.getMetadata(client);
@@ -243,8 +263,9 @@ public class DataService {
     List<Document> arrayFilters = (List<Document>) data.get(1);
 
     Bson query = QueryService.getQuery(ids);
-    Long updatedCount = databaseAdapter.deleteInArray(query, existingMaxSerial, deletesToSet, arrayFilters,
-        CollectionName.metadata.name());
+    Long updatedCount =
+        databaseAdapter.deleteInArray(
+            query, existingMaxSerial, deletesToSet, arrayFilters, CollectionName.metadata.name());
     return checkSuccess(ids.size(), updatedCount.intValue());
   }
 
@@ -264,7 +285,6 @@ public class DataService {
     return databaseAdapter.create(doc, CollectionName.metadata.name());
   }
 
-
   /*-----Entity APIs-----*/
 
   public List<Map<String, Object>> getDocList(String client, String entityName, Metadata metadata) {
@@ -272,12 +292,19 @@ public class DataService {
     if (metadata.getGlobalFields() == null || metadata.getGlobalFields().isEmpty()) {
       throw new NucleusException("Please define your global fields first.");
     } else {
-      metadata.getGlobalFields().forEach(gf -> {
-        Set<String> values = gf.getValues();
-        if (values.size() > 0) {
-          queryFields.append(gf.getFieldName()).append(':').append(values.iterator().next()).append(',');
-        }
-      });
+      metadata
+          .getGlobalFields()
+          .forEach(
+              gf -> {
+                Set<String> values = gf.getValues();
+                if (values.size() > 0) {
+                  queryFields
+                      .append(gf.getFieldName())
+                      .append(':')
+                      .append(values.iterator().next())
+                      .append(',');
+                }
+              });
       queryFields.setLength(queryFields.length() - 1);
     }
 
@@ -286,19 +313,27 @@ public class DataService {
     if (entity.getFields() == null || entity.getFields().isEmpty()) {
       throw new NucleusException("Please define your entity fields first.");
     } else {
-      entity.getFields().forEach(field -> {
-        if (field.getFieldLevel() != null && field.getFieldLevel().equals(FieldLevel.primary)) {
-          returnFields.add(field.getFieldName());
-        }
-      });
+      entity
+          .getFields()
+          .forEach(
+              field -> {
+                if (field.getFieldLevel() != null
+                    && field.getFieldLevel().equals(FieldLevel.primary)) {
+                  returnFields.add(field.getFieldName());
+                }
+              });
     }
     returnFields.add(Fields.MONGO_ID);
 
     return getEntities(client, entityName, queryFields.toString(), returnFields, false);
   }
 
-  public List<Map<String, Object>> getEntities(String client, String entity, String queryFields,
-      List<String> returnFields, boolean withAssociationData) {
+  public List<Map<String, Object>> getEntities(
+      String client,
+      String entity,
+      String queryFields,
+      List<String> returnFields,
+      boolean withAssociationData) {
     checkMandatoryFields(client, entity);
     checkMandatoryField(queryFields, "query");
     Metadata meta = metadataService.getMetadata(client);
@@ -329,18 +364,21 @@ public class DataService {
     return databaseAdapter.setDefault(query, defaultDoc, entity);
   }
 
-  public Long updatePrimaryFields(String client, String entity, String id, Map<String, Object> updates) {
+  public Long updatePrimaryFields(
+      String client, String entity, String id, Map<String, Object> updates) {
     checkMandatoryFields(client, entity);
     Metadata meta = metadataService.getMetadata(client);
     checkMandatoryFieldsExistence(meta, entity, client);
     checkMandatoryField(id, "id");
 
-    List<Object> data = metadataService.convertInputUpdateToDbUpdates(updates, entity, client, meta);
+    List<Object> data =
+        metadataService.convertInputUpdateToDbUpdates(updates, entity, client, meta);
     Map<String, Object> updatesToSet = (Map<String, Object>) data.get(1);
 
     // check duplicate primary fields
     Bson query = QueryService.getQuery(updatesToSet);
-    List<Map<String, Object>> response = databaseAdapter.get(query, getCollectionName(client, entity));
+    List<Map<String, Object>> response =
+        databaseAdapter.get(query, getCollectionName(client, entity));
     if (!response.isEmpty() && !response.get(0).get(Fields.ID).equals(id)) {
       throw new NucleusException("These primary field values already exists.");
     }
@@ -349,7 +387,8 @@ public class DataService {
     return databaseAdapter.update(query, updatesToSet, null, getCollectionName(client, entity));
   }
 
-  public Long updateEntities(String client, String entity, List<String> ids, Map<String, Object> updates) {
+  public Long updateEntities(
+      String client, String entity, List<String> ids, Map<String, Object> updates) {
     checkMandatoryFields(client, entity);
     Metadata meta = metadataService.getMetadata(client);
     checkMandatoryFieldsExistence(meta, entity, client);
@@ -357,16 +396,23 @@ public class DataService {
     // remove primary fields
     removePrimaryFields(meta.getEntity(entity), updates);
 
-    List<Object> data = metadataService.convertInputUpdateToDbUpdates(updates, entity, client, meta);
+    List<Object> data =
+        metadataService.convertInputUpdateToDbUpdates(updates, entity, client, meta);
     List<AssociationUpdates> associationUpdates = (List<AssociationUpdates>) data.get(0);
     Map<String, Object> updatesToSet = (Map<String, Object>) data.get(1);
     List<Document> arrayFilters = (List<Document>) data.get(2);
     Bson query = QueryService.getQuery(ids);
-    return databaseAdapter.update(query, updatesToSet, arrayFilters, getCollectionName(client, entity),
-        associationUpdates, client);
+    return databaseAdapter.update(
+        query,
+        updatesToSet,
+        arrayFilters,
+        getCollectionName(client, entity),
+        associationUpdates,
+        client);
   }
 
-  public Long addInEntityArray(String client, String entity, List<String> ids, Map<String, Object> updates) {
+  public Long addInEntityArray(
+      String client, String entity, List<String> ids, Map<String, Object> updates) {
     checkMandatoryFields(client, entity);
     Metadata meta = metadataService.getMetadata(client);
     checkMandatoryFieldsExistence(meta, entity, client);
@@ -374,14 +420,20 @@ public class DataService {
     // remove primary fields
     removePrimaryFields(meta.getEntity(entity), updates);
 
-    List<Object> data = metadataService.convertInputUpdateToDbUpdates(updates, entity, client, meta);
+    List<Object> data =
+        metadataService.convertInputUpdateToDbUpdates(updates, entity, client, meta);
     Map<String, Object> updatesToSet = (Map<String, Object>) data.get(1);
     List<Document> arrayFilters = (List<Document>) data.get(2);
     Bson query = QueryService.getQuery(ids);
-    return databaseAdapter.addInArray(query, updatesToSet, arrayFilters, getCollectionName(client, entity));
+    return databaseAdapter.addInArray(
+        query, updatesToSet, arrayFilters, getCollectionName(client, entity));
   }
 
-  public Long deleteInEntityArray(String client, String entity, List<String> ids, Map<String, Object> deletes,
+  public Long deleteInEntityArray(
+      String client,
+      String entity,
+      List<String> ids,
+      Map<String, Object> deletes,
       Integer arraySize) {
     checkMandatoryFields(client, entity);
     Metadata meta = metadataService.getMetadata(client);
@@ -391,14 +443,16 @@ public class DataService {
     // remove primary fields
     removePrimaryFields(meta.getEntity(entity), deletes);
 
-    List<Object> data = metadataService.convertInputUpdateToDbUpdates(deletes, entity, client, meta);
+    List<Object> data =
+        metadataService.convertInputUpdateToDbUpdates(deletes, entity, client, meta);
     Long docDeleteCount = 0L;
     Map<String, Object> deletesToSet = (Map<String, Object>) data.get(1);
     if (!deletesToSet.isEmpty()) {
       List<Document> arrayFilters = (List<Document>) data.get(2);
       Bson query = QueryService.getQuery(ids);
-      docDeleteCount = databaseAdapter.deleteInArray(query, arraySize, deletesToSet, arrayFilters,
-          getCollectionName(client, entity));
+      docDeleteCount =
+          databaseAdapter.deleteInArray(
+              query, arraySize, deletesToSet, arrayFilters, getCollectionName(client, entity));
     }
     if (!((List) data.get(0)).isEmpty()) {
       Long assDeleteCount = databaseAdapter.deleteAssociations(ids, (List) data.get(0)).longValue();
@@ -407,24 +461,27 @@ public class DataService {
     return docDeleteCount;
   }
 
-  private Map<String, Object> getPrimaryFieldsValueMap(Metadata meta, String entity, Map<String, Object> doc) {
+  private Map<String, Object> getPrimaryFieldsValueMap(
+      Metadata meta, String entity, Map<String, Object> doc) {
     List<String> primaryFields = meta.getEntity(entity).getPrimaryFieldsName();
     Set<String> globalFields = meta.getGlobalFieldsSet();
     Map<String, Object> primaryFieldsValue = new HashMap<>();
-    globalFields.forEach(field -> {
-      if (doc.containsKey(field)) {
-        primaryFieldsValue.put(field, doc.get(field));
-      } else {
-        throw new NucleusException("Primary field(s) are missing.");
-      }
-    });
-    primaryFields.forEach(field -> {
-      if (doc.containsKey(field)) {
-        primaryFieldsValue.put(field, doc.get(field));
-      } else {
-        throw new NucleusException("Primary field(s) are missing.");
-      }
-    });
+    globalFields.forEach(
+        field -> {
+          if (doc.containsKey(field)) {
+            primaryFieldsValue.put(field, doc.get(field));
+          } else {
+            throw new NucleusException("Primary field(s) are missing.");
+          }
+        });
+    primaryFields.forEach(
+        field -> {
+          if (doc.containsKey(field)) {
+            primaryFieldsValue.put(field, doc.get(field));
+          } else {
+            throw new NucleusException("Primary field(s) are missing.");
+          }
+        });
     return primaryFieldsValue;
   }
 
@@ -433,7 +490,8 @@ public class DataService {
     checkMandatoryFieldsExistence(meta, entity, client);
 
     addSerial(doc);
-    List<AssociationUpdates> associationUpdates = metadataService.validateInput(doc, entity, client, meta);
+    List<AssociationUpdates> associationUpdates =
+        metadataService.validateInput(doc, entity, client, meta);
 
     // check duplicate primary fields
     Map<String, Object> primaryFieldsValue = getPrimaryFieldsValueMap(meta, entity, doc);
@@ -455,10 +513,10 @@ public class DataService {
     return databaseAdapter.create(document, collectionName, associationUpdates, client);
   }
 
-
   /*-----JSON APIs-----*/
 
-  public String createJson(String client, Map<String, Object> doc, String environment, String localization) {
+  public String createJson(
+      String client, Map<String, Object> doc, String environment, String localization) {
     checkMandatoryField(client, Fields.CLIENT);
     checkMandatoryField(environment, Fields.ENVIRONMENT);
     checkMandatoryField(localization, Fields.LOCALIZATION);
@@ -476,7 +534,8 @@ public class DataService {
     return databaseAdapter.create(document, Fields.SIMPLE_CLIENT_DEFAULT_ENTITY);
   }
 
-  public Long replaceJson(String client, String id, Map<String, Object> doc, String environment, String localization) {
+  public Long replaceJson(
+      String client, String id, Map<String, Object> doc, String environment, String localization) {
     checkMandatoryField(client, Fields.CLIENT);
     checkMandatoryField(environment, Fields.ENVIRONMENT);
     checkMandatoryField(localization, Fields.LOCALIZATION);
@@ -491,8 +550,8 @@ public class DataService {
     return databaseAdapter.replaceOne(query, document, Fields.SIMPLE_CLIENT_DEFAULT_ENTITY);
   }
 
-  public List<Map<String, Object>> getJson(String client, String environment, String localization,
-      List<String> returnFields) {
+  public List<Map<String, Object>> getJson(
+      String client, String environment, String localization, List<String> returnFields) {
     checkMandatoryField(client, Fields.CLIENT);
 
     Bson query = QueryService.getQuery(client, null, environment, localization);
@@ -505,10 +564,10 @@ public class DataService {
     return documents;
   }
 
-
   /*-----File APIs-----*/
 
-  public String uploadFile(String client, String entity, String ids, String fieldname, MultipartFile file) {
+  public String uploadFile(
+      String client, String entity, String ids, String fieldname, MultipartFile file) {
     checkMandatoryFields(entity, client);
     checkMandatoryField(ids, "ids");
 
@@ -518,19 +577,23 @@ public class DataService {
     updates.put(fieldname, fileUrl);
 
     Metadata meta = metadataService.getMetadata(client);
-    List<Object> data = metadataService.convertInputUpdateToDbUpdates(updates, entity, client, meta);
+    List<Object> data =
+        metadataService.convertInputUpdateToDbUpdates(updates, entity, client, meta);
     Map<String, Object> updatesToSet = (Map<String, Object>) data.get(1);
     List<Document> arrayFilters = (List<Document>) data.get(2);
 
     Bson query = QueryService.getQuery(Arrays.asList(ids.split(COMMA)));
-    Long success = databaseAdapter.update(query, updatesToSet, arrayFilters, getCollectionName(client, entity));
+    Long success =
+        databaseAdapter.update(
+            query, updatesToSet, arrayFilters, getCollectionName(client, entity));
     if (success == 1) {
       return fileUrl;
     }
     return null;
   }
 
-  public String uploadFileForNonMetaClient(String client, String ids, String fieldname, MultipartFile file) {
+  public String uploadFileForNonMetaClient(
+      String client, String ids, String fieldname, MultipartFile file) {
     checkMandatoryField(client, Fields.CLIENT);
     checkMandatoryField(ids, "id");
 
@@ -546,5 +609,4 @@ public class DataService {
     }
     return null;
   }
-
 }

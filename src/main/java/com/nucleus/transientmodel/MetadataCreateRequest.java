@@ -22,5 +22,4 @@ public class MetadataCreateRequest {
   public void setMetadata(Map<String, Object> metadata) {
     this.metadata = metadata;
   }
-
 }

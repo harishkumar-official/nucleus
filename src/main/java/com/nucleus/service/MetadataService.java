@@ -1,29 +1,18 @@
 package com.nucleus.service;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import org.bson.Document;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nucleus.constants.Fields;
 import com.nucleus.database.CollectionName;
 import com.nucleus.database.DatabaseAdapter;
 import com.nucleus.exception.NucleusException;
-import com.nucleus.metadata.AssociationType;
-import com.nucleus.metadata.Entity;
-import com.nucleus.metadata.Field;
-import com.nucleus.metadata.FieldLevel;
-import com.nucleus.metadata.Metadata;
-import com.nucleus.metadata.PrimaryType;
-import com.nucleus.metadata.TypeDefinition;
+import com.nucleus.metadata.*;
 import com.nucleus.transientmodel.AssociationUpdates;
+import org.bson.Document;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+
+import java.util.*;
 
 @Service
 @SuppressWarnings({"rawtypes", "unchecked"})
@@ -31,8 +20,25 @@ public class MetadataService {
 
   private static final String DOT = "\\.";
   private static final String COMMA = ",";
-
+  private static final Set<Character> CHAR_LIST = new HashSet<Character>();
+  private static final String PART1 = "$[e";
+  private static final String PART2 = "]";
+  private static final String PART3 = "e";
+  private static final String PART4 = "." + Fields.SERIAL;
   private static ObjectMapper mapper = new ObjectMapper();
+
+  static {
+    CHAR_LIST.add('0');
+    CHAR_LIST.add('1');
+    CHAR_LIST.add('2');
+    CHAR_LIST.add('3');
+    CHAR_LIST.add('4');
+    CHAR_LIST.add('5');
+    CHAR_LIST.add('6');
+    CHAR_LIST.add('7');
+    CHAR_LIST.add('8');
+    CHAR_LIST.add('9');
+  }
 
   private DatabaseAdapter database;
 
@@ -76,17 +82,22 @@ public class MetadataService {
       int entitySize = meta.getEntities().size();
       List<Map<String, Object>> entities = (List<Map<String, Object>>) newMeta.get(Fields.ENTITIES);
       if (entities != null) {
-        for (Map<String, Object> newEntity: entities) {
+        for (Map<String, Object> newEntity : entities) {
           String entityName = (String) newEntity.get(Fields.ENTITY_NAME);
           validatePrimaryFields((List<Map<String, Object>>) newEntity.get(Fields.FIELDS));
           if (entityName == null) {
             Integer serial = (Integer) newEntity.get(Fields.SERIAL);
             Entity existingEntity =
-                meta.getEntities().stream().filter(en -> en.getSerial().equals(serial)).findFirst().orElse(null);
+                meta.getEntities().stream()
+                    .filter(en -> en.getSerial().equals(serial))
+                    .findFirst()
+                    .orElse(null);
             if (existingEntity == null) {
               throw new NucleusException("Entity with serial'" + serial + "' doesn't exists.");
             } else {
-              validateMetaFields(existingEntity.getEntityName(), existingEntity.getFields(),
+              validateMetaFields(
+                  existingEntity.getEntityName(),
+                  existingEntity.getFields(),
                   (List<Map<String, Object>>) newEntity.get(Fields.FIELDS));
             }
           } else {
@@ -102,19 +113,26 @@ public class MetadataService {
   private void validateTypeDefinition(Metadata meta, Map<String, Object> newMeta) {
     if (meta != null) {
       int typeSize = meta.getTypeDefinitions().size();
-      List<Map<String, Object>> typeDefinitions = (List<Map<String, Object>>) newMeta.get(Fields.TYPE_DEFINITIONS);
+      List<Map<String, Object>> typeDefinitions =
+          (List<Map<String, Object>>) newMeta.get(Fields.TYPE_DEFINITIONS);
       if (typeDefinitions != null) {
-        for (Map<String, Object> newType: typeDefinitions) {
+        for (Map<String, Object> newType : typeDefinitions) {
           String typeName = (String) newType.get(Fields.TYPE_NAME);
-          validateTypeDefinitionFields(meta, (List<Map<String, Object>>) newType.get(Fields.FIELDS));
+          validateTypeDefinitionFields(
+              meta, (List<Map<String, Object>>) newType.get(Fields.FIELDS));
           if (typeName == null) {
             Integer serial = (Integer) newType.get(Fields.SERIAL);
             TypeDefinition existingType =
-                meta.getTypeDefinitions().stream().filter(en -> en.getSerial().equals(serial)).findFirst().orElse(null);
+                meta.getTypeDefinitions().stream()
+                    .filter(en -> en.getSerial().equals(serial))
+                    .findFirst()
+                    .orElse(null);
             if (existingType == null) {
               throw new NucleusException("Type with serial'" + serial + "' doesn't exists.");
             } else {
-              validateMetaFields(existingType.getTypeName(), existingType.getFields(),
+              validateMetaFields(
+                  existingType.getTypeName(),
+                  existingType.getFields(),
                   (List<Map<String, Object>>) newType.get(Fields.FIELDS));
             }
           } else {
@@ -164,19 +182,26 @@ public class MetadataService {
     }
   }
 
-  private void validateMetaFields(String name, List<Field> existingSubFields, List<Map<String, Object>> newSubFields) {
+  private void validateMetaFields(
+      String name, List<Field> existingSubFields, List<Map<String, Object>> newSubFields) {
     if (newSubFields != null && existingSubFields != null) {
       int fieldsSize = existingSubFields.size();
-      for (Map<String, Object> newSubField: newSubFields) {
+      for (Map<String, Object> newSubField : newSubFields) {
         Field existingSubField = null;
         String fieldName = (String) newSubField.get(Fields.FIELD_NAME);
         if (fieldName == null) {
           Integer serial = (Integer) newSubField.get(Fields.SERIAL);
           existingSubField =
-              existingSubFields.stream().filter(e -> e.getSerial().equals(serial)).findFirst().orElse(null);
+              existingSubFields.stream()
+                  .filter(e -> e.getSerial().equals(serial))
+                  .findFirst()
+                  .orElse(null);
         } else {
           existingSubField =
-              existingSubFields.stream().filter(e -> e.getFieldName().equals(fieldName)).findFirst().orElse(null);
+              existingSubFields.stream()
+                  .filter(e -> e.getFieldName().equals(fieldName))
+                  .findFirst()
+                  .orElse(null);
           if (existingSubField == null) {
             validateAllowedName(fieldName);
             int serial = ++fieldsSize;
@@ -184,12 +209,16 @@ public class MetadataService {
           }
         }
 
-        if (newSubField.containsKey(Fields.FIELDS) && existingSubField != null
+        if (newSubField.containsKey(Fields.FIELDS)
+            && existingSubField != null
             && existingSubField.getFields() != null) {
-          validateMetaFields(existingSubField.getFieldName(), existingSubField.getFields(),
+          validateMetaFields(
+              existingSubField.getFieldName(),
+              existingSubField.getFields(),
               (List<Map<String, Object>>) newSubField.get(Fields.FIELDS));
         } else if (!newSubField.containsKey(Fields.FIELDS) && existingSubField != null) {
-          throw new NucleusException("Field '" + fieldName + "' already exists inside '" + name + "'.");
+          throw new NucleusException(
+              "Field '" + fieldName + "' already exists inside '" + name + "'.");
         }
       }
     }
@@ -200,10 +229,9 @@ public class MetadataService {
     validateTypeDefinition(meta, newMeta);
   }
 
-  /**
-   * Meta-data validation.
-   */
-  public String validateMetadata(Metadata metadata, Map<String, Object> newMetadataParameters, boolean validateFields) {
+  /** Meta-data validation. */
+  public String validateMetadata(
+      Metadata metadata, Map<String, Object> newMetadataParameters, boolean validateFields) {
     if (validateFields) {
       validateMetaFields(metadata, newMetadataParameters);
     }
@@ -254,11 +282,9 @@ public class MetadataService {
     return fields;
   }
 
-  /**
-   * Data validation.
-   */
-  public List<AssociationUpdates> validateInput(Map<String, Object> input, String entityName, String client,
-      Metadata meta) {
+  /** Data validation. */
+  public List<AssociationUpdates> validateInput(
+      Map<String, Object> input, String entityName, String client, Metadata meta) {
     try {
       Entity entity = meta.getEntity(entityName);
       List<AssociationUpdates> associationUpdates = new ArrayList<AssociationUpdates>();
@@ -271,8 +297,13 @@ public class MetadataService {
     }
   }
 
-  private void validateInput(Map<String, Object> input, List<Field> fields, Set<String> fieldNameSet, Metadata meta,
-      List<AssociationUpdates> associationUpdates, String parentEntityName) {
+  private void validateInput(
+      Map<String, Object> input,
+      List<Field> fields,
+      Set<String> fieldNameSet,
+      Metadata meta,
+      List<AssociationUpdates> associationUpdates,
+      String parentEntityName) {
     validateFieldsName(input, fieldNameSet);
     if (fields != null) {
       for (Field field : fields) {
@@ -283,10 +314,16 @@ public class MetadataService {
           String fieldType = field.getType();
 
           if (fieldType.equals(PrimaryType.OBJECT)) {
-            validateInput((Map<String, Object>) val, field.getFields(), field.getFieldNameSet(), meta,
-                associationUpdates, parentEntityName);
+            validateInput(
+                (Map<String, Object>) val,
+                field.getFields(),
+                field.getFieldNameSet(),
+                meta,
+                associationUpdates,
+                parentEntityName);
           } else if (PrimaryType.SET.contains(fieldType)) {
-            input.put(fieldName, cast(val, fieldType, field, meta, associationUpdates, parentEntityName));
+            input.put(
+                fieldName, cast(val, fieldType, field, meta, associationUpdates, parentEntityName));
           } else {
             TypeDefinition typeDefinition = meta.getTypeDefinition(fieldType);
             if (typeDefinition == null) {
@@ -297,16 +334,36 @@ public class MetadataService {
               String assType = field.getAssociationType();
               if (assType != null && AssociationType.many_to_many.name().equals(assType)) {
                 field.setSubType(PrimaryType.STRING);
-                List<Map<String, Object>> refEntityIdsMap = (List<Map<String, Object>>) cast(val, PrimaryType.ARRAY,
-                    field, meta, associationUpdates, parentEntityName);
+                List<Map<String, Object>> refEntityIdsMap =
+                    (List<Map<String, Object>>)
+                        cast(
+                            val,
+                            PrimaryType.ARRAY,
+                            field,
+                            meta,
+                            associationUpdates,
+                            parentEntityName);
                 updateAssociation(parentEntityName, fieldType, refEntityIdsMap, associationUpdates);
                 input.remove(fieldName);
               } else {
-                input.put(fieldName, cast(val, PrimaryType.STRING, field, meta, associationUpdates, parentEntityName));
+                input.put(
+                    fieldName,
+                    cast(
+                        val,
+                        PrimaryType.STRING,
+                        field,
+                        meta,
+                        associationUpdates,
+                        parentEntityName));
               }
             } else {
-              validateInput((Map<String, Object>) val, typeDefinition.getFields(), typeDefinition.getFieldNameSet(),
-                  meta, associationUpdates, parentEntityName);
+              validateInput(
+                  (Map<String, Object>) val,
+                  typeDefinition.getFields(),
+                  typeDefinition.getFieldNameSet(),
+                  meta,
+                  associationUpdates,
+                  parentEntityName);
             }
           }
         }
@@ -314,16 +371,20 @@ public class MetadataService {
     }
   }
 
-  private void updateAssociation(String parentEntityName, String refEntityName,
-      List<Map<String, Object>> refEntityIdsMap, List<AssociationUpdates> associationUpdates) {
-    refEntityIdsMap.forEach(entry -> {
-      String value = (String) entry.get(Fields.VALUE);
-      if (value.contains(COMMA)) {
-        String[] values = value.split(COMMA);
-        entry.put(Fields.VALUE, values[0]);
-        entry.put(Fields.PREVIOUS_VALUE, values[1]);
-      }
-    });
+  private void updateAssociation(
+      String parentEntityName,
+      String refEntityName,
+      List<Map<String, Object>> refEntityIdsMap,
+      List<AssociationUpdates> associationUpdates) {
+    refEntityIdsMap.forEach(
+        entry -> {
+          String value = (String) entry.get(Fields.VALUE);
+          if (value.contains(COMMA)) {
+            String[] values = value.split(COMMA);
+            entry.put(Fields.VALUE, values[0]);
+            entry.put(Fields.PREVIOUS_VALUE, values[1]);
+          }
+        });
     AssociationUpdates update = new AssociationUpdates();
     update.setParentEntityName(parentEntityName);
     update.setRefEntityName(refEntityName);
@@ -334,7 +395,8 @@ public class MetadataService {
   private boolean validateFieldsName(Map<String, Object> input, Set<String> fieldNameList) {
     fieldNameList.add(Fields.SERIAL);
     if (fieldNameList == null || !fieldNameList.containsAll(input.keySet())) {
-      throw new NucleusException("Please check your fields " + input.keySet() + ", some of them don't exist.");
+      throw new NucleusException(
+          "Please check your fields " + input.keySet() + ", some of them don't exist.");
     }
     return true;
   }
@@ -374,8 +436,13 @@ public class MetadataService {
     }
   }
 
-  private Object cast(Object value, String fieldType, Field field, Metadata meta,
-      List<AssociationUpdates> associationUpdates, String parentEntityName) {
+  private Object cast(
+      Object value,
+      String fieldType,
+      Field field,
+      Metadata meta,
+      List<AssociationUpdates> associationUpdates,
+      String parentEntityName) {
     value = parseString(value, fieldType);
     try {
       switch (fieldType) {
@@ -393,76 +460,79 @@ public class MetadataService {
           return ((Number) value).longValue();
         case PrimaryType.BOOLEAN:
           return (Boolean) value;
-        case PrimaryType.ENUM: {
-          String enumVal = (String) value;
-          Set<String> enumValues = field.getValues();
-          if (!enumValues.contains(enumVal)) {
-            throw new NucleusException("The enum value [" + enumVal + "] is not defined.");
+        case PrimaryType.ENUM:
+          {
+            String enumVal = (String) value;
+            Set<String> enumValues = field.getValues();
+            if (!enumValues.contains(enumVal)) {
+              throw new NucleusException("The enum value [" + enumVal + "] is not defined.");
+            }
+            return enumVal;
           }
-          return enumVal;
-        }
-        case PrimaryType.ARRAY: {
-          String subType = field.getSubType();
-          if (subType.equals(PrimaryType.OBJECT)) {
-            List<Map<String, Object>> list = (List<Map<String, Object>>) value;
-            list.forEach(e -> validateInput(e, field.getFields(), field.getFieldNameSet(), meta, associationUpdates,
-                parentEntityName));
-            return value;
-          } else if (PrimaryType.SET.contains(subType)) {
-            List<Map<String, Object>> list = (List) value;
-            list.forEach(elem -> {
-              Object serial = elem.get(Fields.SERIAL);
-              if (serial != null) {
-                elem.put(Fields.SERIAL, cast(serial, PrimaryType.INTEGER, null, null, null, parentEntityName));
-              }
-              if (elem.containsKey(Fields.VALUE)) {
-                Object val = elem.get(Fields.VALUE);
-                elem.put(Fields.VALUE, cast(val, subType, null, null, null, parentEntityName));
-              }
-              if (elem.containsKey(Fields.PREVIOUS_VALUE)) {
-                Object prev_val = elem.get(Fields.PREVIOUS_VALUE);
-                elem.put(Fields.PREVIOUS_VALUE, cast(prev_val, subType, null, null, null, parentEntityName));
-              }
-            });
-            return list;
-          } else {
-            TypeDefinition typeDefinition = meta.getTypeDefinition(subType);
-            List<Map<String, Object>> list = (List<Map<String, Object>>) value;
-            list.forEach(e -> validateInput(e, typeDefinition.getFields(), typeDefinition.getFieldNameSet(), meta,
-                associationUpdates, parentEntityName));
-            return value;
+        case PrimaryType.ARRAY:
+          {
+            String subType = field.getSubType();
+            if (subType.equals(PrimaryType.OBJECT)) {
+              List<Map<String, Object>> list = (List<Map<String, Object>>) value;
+              list.forEach(
+                  e ->
+                      validateInput(
+                          e,
+                          field.getFields(),
+                          field.getFieldNameSet(),
+                          meta,
+                          associationUpdates,
+                          parentEntityName));
+              return value;
+            } else if (PrimaryType.SET.contains(subType)) {
+              List<Map<String, Object>> list = (List) value;
+              list.forEach(
+                  elem -> {
+                    Object serial = elem.get(Fields.SERIAL);
+                    if (serial != null) {
+                      elem.put(
+                          Fields.SERIAL,
+                          cast(serial, PrimaryType.INTEGER, null, null, null, parentEntityName));
+                    }
+                    if (elem.containsKey(Fields.VALUE)) {
+                      Object val = elem.get(Fields.VALUE);
+                      elem.put(
+                          Fields.VALUE, cast(val, subType, null, null, null, parentEntityName));
+                    }
+                    if (elem.containsKey(Fields.PREVIOUS_VALUE)) {
+                      Object prev_val = elem.get(Fields.PREVIOUS_VALUE);
+                      elem.put(
+                          Fields.PREVIOUS_VALUE,
+                          cast(prev_val, subType, null, null, null, parentEntityName));
+                    }
+                  });
+              return list;
+            } else {
+              TypeDefinition typeDefinition = meta.getTypeDefinition(subType);
+              List<Map<String, Object>> list = (List<Map<String, Object>>) value;
+              list.forEach(
+                  e ->
+                      validateInput(
+                          e,
+                          typeDefinition.getFields(),
+                          typeDefinition.getFieldNameSet(),
+                          meta,
+                          associationUpdates,
+                          parentEntityName));
+              return value;
+            }
           }
-        }
         default:
           return (Map<String, Object>) value;
       }
     } catch (ClassCastException e) {
-      throw new NucleusException("Field: " + field.getFieldName() + " value: " + value + " is not of right type.", e);
+      throw new NucleusException(
+          "Field: " + field.getFieldName() + " value: " + value + " is not of right type.", e);
     }
   }
 
-  private static final Set<Character> CHAR_LIST = new HashSet<Character>();
-
-  static {
-    CHAR_LIST.add('0');
-    CHAR_LIST.add('1');
-    CHAR_LIST.add('2');
-    CHAR_LIST.add('3');
-    CHAR_LIST.add('4');
-    CHAR_LIST.add('5');
-    CHAR_LIST.add('6');
-    CHAR_LIST.add('7');
-    CHAR_LIST.add('8');
-    CHAR_LIST.add('9');
-  }
-
-  private static final String PART1 = "$[e";
-  private static final String PART2 = "]";
-  private static final String PART3 = "e";
-  private static final String PART4 = "." + Fields.SERIAL;
-
-  public List<Object> convertInputUpdateToDbUpdates(Map<String, Object> updates, String entityName, String client,
-      Metadata meta) {
+  public List<Object> convertInputUpdateToDbUpdates(
+      Map<String, Object> updates, String entityName, String client, Metadata meta) {
     Entity entity = meta.getEntity(entityName);
     List<AssociationUpdates> associationUpdates = new ArrayList<AssociationUpdates>();
     Map<String, Object> updatesToSet = new HashMap<String, Object>();
@@ -488,11 +558,8 @@ public class MetadataService {
     return Arrays.asList(associationUpdates, updatesToSet, arrayFilters);
   }
 
-  class WrapInt {
-    int value;
-  }
-
-  public List<Object> convertMetaUpdateToDbUpdates(Metadata meta, Map<String, Object> updates, boolean validateFields) {
+  public List<Object> convertMetaUpdateToDbUpdates(
+      Metadata meta, Map<String, Object> updates, boolean validateFields) {
     Map<String, Object> updatesToSet = new HashMap<String, Object>();
     List<Document> arrayFilters = new ArrayList<Document>();
 
@@ -512,7 +579,8 @@ public class MetadataService {
     return Arrays.asList(updatesToSet, arrayFilters);
   }
 
-  private String convertFieldToDbField(String fullFieldName, List<Document> arrayFilters, WrapInt index) {
+  private String convertFieldToDbField(
+      String fullFieldName, List<Document> arrayFilters, WrapInt index) {
     String[] fields = fullFieldName.split(DOT);
     StringBuilder fullFieldToSet = new StringBuilder();
     for (int j = 0; j < fields.length; j++) {
@@ -592,4 +660,7 @@ public class MetadataService {
     return verifiedValue;
   }
 
+  class WrapInt {
+    int value;
+  }
 }

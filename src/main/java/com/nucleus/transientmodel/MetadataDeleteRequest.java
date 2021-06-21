@@ -15,5 +15,4 @@ public class MetadataDeleteRequest extends MetadataUpdateRequest {
   public void setArraySize(Integer arraySize) {
     this.arraySize = arraySize;
   }
-
 }

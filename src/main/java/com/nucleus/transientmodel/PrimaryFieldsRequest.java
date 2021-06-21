@@ -1,9 +1,10 @@
 package com.nucleus.transientmodel;
 
-import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+
+import java.util.Map;
 
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 @JsonIgnoreProperties("ids")
@@ -27,5 +28,4 @@ public class PrimaryFieldsRequest extends UpdateRequest {
   public void setGlobalFields(Map<String, Object> globalFields) {
     this.globalFields = globalFields;
   }
-
 }

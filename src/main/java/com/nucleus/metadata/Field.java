@@ -1,9 +1,5 @@
-
 package com.nucleus.metadata;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -12,11 +8,17 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 @JsonInclude(value = Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonNaming(PropertyNamingStrategy.LowerCaseStrategy.class)
 public class Field {
 
+  /* Helper methods */
+  @JsonIgnore Set<String> fieldNameSet;
   private Integer serial;
   private Long createDate;
   private Long updateDate;
@@ -136,13 +138,7 @@ public class Field {
     this.fields = fields;
   }
 
-  /* Helper methods */
-  @JsonIgnore
-  Set<String> fieldNameSet;
-
-  /**
-   * Returns field sub-fields name set.
-   */
+  /** Returns field sub-fields name set. */
   public Set<String> getFieldNameSet() {
     if (fieldNameSet == null) {
       fieldNameSet = new HashSet<String>();

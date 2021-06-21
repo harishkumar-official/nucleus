@@ -23,5 +23,4 @@ public class MetadataUpdateRequest {
   public void setUpdates(Map<String, Object> updates) {
     this.updates = updates;
   }
-
 }

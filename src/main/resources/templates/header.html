@@ -1,13 +1,15 @@
 <div class="navigator">
     <img class="logo" height="80%" th:src="@{/images/logo.gif}">
-    <img class="signup" title="Create" height="70%" th:src="@{/images/icon-create.png}" style="float:right; cursor:pointer; display:none">
-    <img class="login" title="Login" height="70%" th:src="@{/images/icon-login.png}" style="float:right; cursor:pointer; display:none">
+    <img class="signup" height="70%" style="float:right; cursor:pointer; display:none" th:src="@{/images/icon-create.png}"
+         title="Create">
+    <img class="login" height="70%" style="float:right; cursor:pointer; display:none" th:src="@{/images/icon-login.png}"
+         title="Login">
 
     <div class="toolbar" style="float:right; display:none">
-        <span class="environment" th:if="${environments} != null" style="display:inline-block"></span>
+        <span class="environment" style="display:inline-block" th:if="${environments} != null"></span>
         <span class="localization" style="display:inline-block"></span>
         <button class="create">Create</button>
-        <span class="metabuttons" th:if="${metadata} != null" style="display:inline-block">
+        <span class="metabuttons" style="display:inline-block" th:if="${metadata} != null">
             <button class="metadata" th:if="${showMetaButton} == true">Metadata</button>
             <button class="appdata" th:if="${showAppButton} == true">Appdata</button>
         </span>
@@ -22,8 +24,9 @@
 <div class="notify_success" style="display:none;"></div>
 <div class="notify_error" style="display:none;"></div>
 
-<script type="text/javascript" th:inline="javascript">
+<script th:inline="javascript" type="text/javascript">
     $(".logo").click(function () {
         window.location.href = "/ui";
     });
+
 </script>

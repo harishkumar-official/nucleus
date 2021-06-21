@@ -23,5 +23,4 @@ public class UpdateRequest {
   public void setUpdates(Map<String, Object> updates) {
     this.updates = updates;
   }
-
 }

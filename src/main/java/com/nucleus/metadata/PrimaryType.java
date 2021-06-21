@@ -32,5 +32,4 @@ public class PrimaryType {
     SET.add(PrimaryType.ARRAY);
     SET.add(PrimaryType.OBJECT);
   }
-
 }

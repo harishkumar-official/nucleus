@@ -24,5 +24,4 @@ public class SetDefaultRequest {
   public void setDefaultDoc(boolean defaultDoc) {
     this.defaultDoc = defaultDoc;
   }
-
 }

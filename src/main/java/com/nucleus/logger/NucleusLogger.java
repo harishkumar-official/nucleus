@@ -35,5 +35,4 @@ public final class NucleusLogger {
   public static void fatal(String msg, Class callingClass) {
     LogManager.getLogger(LOGGER_NAME).fatal(getMsg(callingClass, msg));
   }
-
 }

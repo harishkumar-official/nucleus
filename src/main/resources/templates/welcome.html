@@ -1,10 +1,10 @@
 <html>
 
 <head>
-	<script src="../../js/jquery.min.js"></script>
-	<script src="../../js/commonjs.js"></script>
-	<link rel="stylesheet" href="../../css/style.css">
-	<style>
+    <script src="../../js/jquery.min.js"></script>
+    <script src="../../js/commonjs.js"></script>
+    <link href="../../css/style.css" rel="stylesheet">
+    <style>
 		table {
 			border-collapse: collapse;
 			margin-left: 30px;
@@ -21,18 +21,19 @@
 		a {
 			color: black;
 		}
-	</style>
+
+    </style>
 </head>
 
 <body>
 
-	<div th:replace="header"></div>
+<div th:replace="header"></div>
 
-	<div class="main">
-	</div>
+<div class="main">
+</div>
 
 </body>
-<script type="text/javascript" th:inline="javascript">
+<script th:inline="javascript" type="text/javascript">
 	loadToolbar();
 
 	function getClient() {
@@ -44,6 +45,7 @@
 				jsonObj = data[0];
 			});
 	}
+
 
 
 </script>

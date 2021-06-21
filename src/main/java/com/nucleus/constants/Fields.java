@@ -22,7 +22,6 @@ public class Fields {
   public static final String ASS_MAPPING = "mapping";
   public static final String ASS_NAME = "name";
 
-
   /* meta-data fields */
   public static final String ENTITIES = "entities";
   public static final String ENTITY_NAME = "entityname";
@@ -39,5 +38,4 @@ public class Fields {
   public static final String VALUES = "values";
   public static final String REQUIRED = "required";
   public static final String FIELD_LEVEL = "fieldlevel";
-
 }

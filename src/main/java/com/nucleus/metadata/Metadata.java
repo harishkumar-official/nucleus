@@ -1,16 +1,13 @@
 package com.nucleus.metadata;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+
+import java.util.*;
 
 @JsonInclude(value = Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -22,6 +19,9 @@ public class Metadata {
   String localization;
   List<Entity> entities;
   List<TypeDefinition> typeDefinitions;
+  @JsonIgnore Map<String, TypeDefinition> typeDefinitionMap;
+  @JsonIgnore Map<String, Entity> entityMap;
+  @JsonIgnore Set<String> globalFieldsSet;
   private List<Field> globalFields;
 
   public String getId() {
@@ -60,6 +60,8 @@ public class Metadata {
     return typeDefinitions;
   }
 
+  /* Helper methods */
+
   public void setTypeDefinitions(List<TypeDefinition> typeDefinitions) {
     this.typeDefinitions = typeDefinitions;
   }
@@ -71,15 +73,6 @@ public class Metadata {
   public void setGlobalFields(List<Field> globalFields) {
     this.globalFields = globalFields;
   }
-
-  /* Helper methods */
-
-  @JsonIgnore
-  Map<String, TypeDefinition> typeDefinitionMap;
-  @JsonIgnore
-  Map<String, Entity> entityMap;
-  @JsonIgnore
-  Set<String> globalFieldsSet;
 
   @JsonIgnore
   public TypeDefinition getTypeDefinition(String typeName) {
@@ -107,5 +100,4 @@ public class Metadata {
     }
     return globalFieldsSet;
   }
-
 }
